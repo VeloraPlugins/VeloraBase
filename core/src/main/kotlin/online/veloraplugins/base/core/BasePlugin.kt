@@ -3,6 +3,7 @@ package online.veloraplugins.base.core
 import kotlinx.coroutines.*
 import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.core.configuration.BaseConfig
+import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.core.service.ServiceManager
 import java.io.File
 import java.util.logging.Level
@@ -22,6 +23,16 @@ import java.util.logging.Logger
  * respective platform adapters (PaperBasePlugin, VelocityBasePlugin), not this class directly.
  */
 abstract class BasePlugin {
+
+    /**
+     * Provides access to the global scheduler service.
+     *
+     * Lazy-loaded so it becomes available only after initialize() has
+     * registered the service via registerCoreServices().
+     */
+    val scheduler: SchedulerService by lazy {
+        serviceManager.require<SchedulerService>()
+    }
 
     /**
      * Central service registry and lifecycle controller.
@@ -65,6 +76,7 @@ abstract class BasePlugin {
     fun initialize() {
         this.initDataFolder()
         this.initServices()
+        this.registerCoreServices()
         this.initBaseConfig()
     }
 
@@ -98,6 +110,10 @@ abstract class BasePlugin {
             BaseConfig::class,
             "base-settings.yml"
         )
+    }
+
+    private fun registerCoreServices() {
+        this.serviceManager.registerInstance(SchedulerService(this))
     }
 
     /**
