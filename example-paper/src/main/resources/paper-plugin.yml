@@ -1,0 +1,12 @@
+name: CMS
+main: online.veloraplugins.paper.example.MyPlugin
+version: "1.0.0"
+api-version: '1.21.8'
+authors:
+  - NoPermission
+#loader: net.centrixpvp.cms.paper.plugin.CMSLibraryLoader
+
+dependencies:
+  - name: PlaceholderAPI
+    required: false
+    bootstrap: false

@@ -1,4 +1,4 @@
-package online.veloraplugins.base.paper.example.service
+package online.veloraplugins.paper.example.service
 
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

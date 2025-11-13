@@ -5,3 +5,4 @@ rootProject.name = "VeloraBase"
 include("core")
 include("paper")
 include("common")
+include("example-paper")
