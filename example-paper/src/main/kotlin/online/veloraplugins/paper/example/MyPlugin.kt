@@ -22,11 +22,17 @@ class MyPlugin : PaperBasePlugin() {
         base.serviceManager.registerInstance(MaterialsCacheService(this))
         base.serviceManager.registerInstance(PlaceholderAPIService(this, "baseplugin"))
         base.serviceManager.registerInstance(ExampleService(base))
+
+        loadSchemas()
     }
 
     override fun onEnable() {
         super.onEnable()
+        val papi = base.serviceManager.require(PlaceholderAPIService::class)
+        papi.register("test") { player -> "I am working ${player.name}" }
+    }
 
+    private fun loadSchemas() {
         // Prepare DAO
         val schema = base.serviceManager.require(SchemaService::class)
         val db = schema.getDb()
@@ -35,9 +41,5 @@ class MyPlugin : PaperBasePlugin() {
 
         // Register schema now that DAO exists
         schema.registerSchema(userDao)
-
-        // Register placeholder
-        val papi = base.serviceManager.require(PlaceholderAPIService::class)
-        papi.register("test") { player -> "I am working ${player.name}" }
     }
 }

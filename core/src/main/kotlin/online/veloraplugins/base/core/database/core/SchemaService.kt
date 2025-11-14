@@ -57,22 +57,32 @@ class SchemaService(
         registeredDaos += daos
     }
 
-    /**
-     * Automatically updates all registered schemas on enable.
-     */
     override suspend fun onEnable() {
-        log("Starting schema updates for ${registeredDaos.size} tables...")
+        super.onEnable()
+        applyUpdates()
+    }
 
-        for (dao in registeredDaos) {
-            try {
-                dao.updateSchema()
-                log("✔ Updated schema for table: ${dao.table.tableName}")
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                log("✘ Failed to update schema for ${dao.table.tableName}: ${ex.message}")
+
+    /**
+     * Performs schema updates for all registered DAOs.
+     *
+     * Must be called manually by a plugin or service.
+     */
+    private fun applyUpdates() {
+        app.scheduler.run {
+            log("Starting schema updates for ${registeredDaos.size} tables...")
+
+            for (dao in registeredDaos) {
+                try {
+                    dao.updateSchema()
+                    log("✔ Updated schema for table: ${dao.table.tableName}")
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    log("✘ Failed to update schema for ${dao.table.tableName}: ${ex.message}")
+                }
             }
-        }
 
-        log("Schema update complete.")
+            log("Schema update complete.")
+        }
     }
 }
