@@ -46,6 +46,25 @@ class LanguageDao(
             val entry = row.toEntry()
             entry.key to entry
         }
+
+    /**
+     * Returns ALL language entries, grouped per language.
+     *
+     * Output:
+     *  {
+     *      "en_US" -> { "hello" -> LanguageEntry(...), "bye" -> LanguageEntry(...) },
+     *      "nl_NL" -> { "hello" -> LanguageEntry(...), "bye" -> LanguageEntry(...) }
+     *  }
+     */
+    suspend fun getAllLanguages(): Map<String, Map<String, LanguageEntry>> =
+        findMany { Op.TRUE } // SELECT * FROM table
+            .groupBy { row -> row[LanguageTable.language] } // group by language
+            .mapValues { (_, rows) ->
+                rows.associate { row ->
+                    val entry = row.toEntry()
+                    entry.key to entry
+                }
+            }
 }
 
 /** Converts a ResultRow → LanguageEntry */

@@ -52,7 +52,13 @@ class MyPlugin : PaperBasePlugin() {
     }
 
     private fun loadLanguages() {
-        base.serviceManager.require(LanguageService::class).registerEnum(McLanguage.EN_US, ExampleMessage::class.java)
+        val languageService = base.serviceManager.require(LanguageService::class)
+
+        languageService.registerEnum(McLanguage.EN_US, ExampleMessage::class.java)
+        languageService.registerEnum(McLanguage.NL_NL, ExampleMessage::class.java)
+
+        languageService.reloadAll()
     }
+
 
 }
