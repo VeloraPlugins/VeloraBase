@@ -29,4 +29,13 @@ class BaseConfig : OkaeriConfig() {
      */
     @Comment("MySQL database settings")
     var mysql: MySQLConfig = MySQLConfig()
+
+    /**
+     * Redis server configuration.
+     *
+     * Used by RedisService to establish connections, handle pub/sub,
+     * key/value operations, and distributed caching.
+     */
+    @Comment("Redis server settings")
+    var redis = RedisConfig()
 }

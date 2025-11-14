@@ -3,6 +3,8 @@ package online.veloraplugins.paper.example
 import online.veloraplugins.base.core.database.core.DatabaseService
 import online.veloraplugins.base.core.database.core.SchemaService
 import online.veloraplugins.base.core.database.dao.user.BasicUserDao
+import online.veloraplugins.base.core.redis.RedisService
+import online.veloraplugins.base.core.redis.event.RedisEventService
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import online.veloraplugins.base.paper.services.MaterialsCacheService
 import online.veloraplugins.base.paper.services.PlaceholderAPIService
@@ -19,6 +21,10 @@ class MyPlugin : PaperBasePlugin() {
 
         base.serviceManager.registerInstance(DatabaseService(base))
         base.serviceManager.registerInstance(SchemaService(base))
+
+        base.serviceManager.registerInstance(RedisService(base))
+        base.serviceManager.registerInstance(RedisEventService(base))
+
         base.serviceManager.registerInstance(MaterialsCacheService(this))
         base.serviceManager.registerInstance(PlaceholderAPIService(this, "baseplugin"))
         base.serviceManager.registerInstance(ExampleService(base))

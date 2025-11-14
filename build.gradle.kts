@@ -51,6 +51,10 @@ allprojects {
         implementation("org.jetbrains.exposed:exposed-jdbc:0.51.1")
         implementation("org.jetbrains.exposed:exposed-dao:0.51.1")
         implementation("org.jetbrains.exposed:exposed-core:0.51.1")
+
+
+        implementation("com.google.code.gson:gson:2.13.2")
+        implementation("io.lettuce:lettuce-core:7.0.0.RELEASE")
     }
 
     java {
