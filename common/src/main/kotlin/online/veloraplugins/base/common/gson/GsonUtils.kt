@@ -26,8 +26,13 @@ object GsonUtils {
         .serializeNulls()
         .setPrettyPrinting()
 
+    private var built = false
+
     /** Lazy Gson instance */
-    val gson: Gson by lazy { builder.create() }
+    val gson: Gson by lazy {
+        built = true
+        builder.create()
+    }
 
     /**
      * Registers a custom type adapter BEFORE gson is created.
@@ -35,7 +40,7 @@ object GsonUtils {
      * @throws IllegalStateException if called after gson instance is initialized.
      */
     fun registerAdapter(type: Type, adapter: Any) {
-        if (isBuilt()) {
+        if (built) {
             throw IllegalStateException("Cannot register Gson adapter: Gson is already initialized!")
         }
         builder.registerTypeAdapter(type, adapter)
@@ -44,11 +49,7 @@ object GsonUtils {
     /**
      * Returns true if the Gson instance has already been created.
      */
-    fun isBuilt(): Boolean = this::gson.isInitialized
-
-    /* -------------------------------------------------------------------------
-     * Serialization
-     * ------------------------------------------------------------------------- */
+    fun isBuilt(): Boolean = built
 
     /** Converts any object into JSON string */
     fun toJson(obj: Any): String = gson.toJson(obj)
@@ -56,10 +57,6 @@ object GsonUtils {
     /** Converts any object into a JsonObject */
     fun toJsonObject(obj: Any): JsonObject =
         gson.toJsonTree(obj).asJsonObject
-
-    /* -------------------------------------------------------------------------
-     * Deserialization
-     * ------------------------------------------------------------------------- */
 
     /** Deserialize JSON to type */
     fun <T> fromJson(json: String, clazz: Class<T>): T =

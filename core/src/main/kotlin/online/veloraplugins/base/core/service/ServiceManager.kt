@@ -174,6 +174,32 @@ class ServiceManager(
         }
     }
 
+    fun enableServiceBlocking(type: KClass<out Service>) {
+        runBlocking(Dispatchers.Default) {
+            enableService(type)
+        }
+    }
+
+    suspend fun enableService(type: KClass<out Service>) {
+        val service = this.services[type]
+            ?: error("Service ${type.simpleName} is not registered")
+
+        // Enable dependencies first
+        for (dep in service.dependsOn) {
+            val depService = this.services[dep]
+                ?: error("Missing dependency ${dep.simpleName} for ${service.name}")
+
+            if (!depService.isEnabled) {
+                enableService(dep)   // recursive enabling
+            }
+        }
+
+        // Enable this service if not enabled
+        if (!service.isEnabled) {
+            service.enable()
+        }
+    }
+
     /**
      * Performs a topological sort of all registered services based on
      * their declared dependencies.

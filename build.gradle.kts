@@ -33,6 +33,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        mavenLocal()
         maven("https://jitpack.io")
         maven("https://eldonexus.de/repository/maven-public")
         maven("https://storehouse.okaeri.eu/repository/maven-public/")
@@ -54,7 +55,7 @@ allprojects {
 
 
         implementation("com.google.code.gson:gson:2.13.2")
-        implementation("io.lettuce:lettuce-core:7.0.0.RELEASE")
+        implementation("io.lettuce:lettuce-core:6.5.4.RELEASE")
     }
 
     java {

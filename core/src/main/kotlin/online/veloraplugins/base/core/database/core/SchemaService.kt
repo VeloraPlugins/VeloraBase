@@ -4,20 +4,11 @@ import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.database.dao.BaseDao
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
 
-/**
- * SchemaService manages all database table creation and safe schema updates.
- *
- * Plugins and services register their DAOs, and when SchemaService enables,
- * it automatically runs Exposed's createMissingTablesAndColumns() on each table.
- *
- * Ensures:
- *  - Tables always exist
- *  - New columns get added safely
- *  - No destructive modifications
- *  - Consistent startup order
- */
 class SchemaService(
     private val app: BasePlugin,
 ) : AbstractService(app) {
@@ -25,64 +16,48 @@ class SchemaService(
     override val dependsOn: Set<KClass<out Service>> =
         setOf(DatabaseService::class)
 
-    /** All registered DAOs whose schemas must be managed */
-    private val registeredDaos = mutableListOf<BaseDao<*>>()
+    /** Cache: DAO class → DAO instance */
+    private val daoCache = mutableMapOf<KClass<out BaseDao<*>>, BaseDao<*>>()
 
-    /**
-     * Returns the active DatabaseService instance.
-     *
-     * This is always safe to call because SchemaService depends on DatabaseService,
-     * ensuring it is initialized first.
-     */
     fun getDatabase(): DatabaseService =
-        app.serviceManager.get(DatabaseService::class)
-            ?: error("DatabaseService is not loaded yet!")
-
-    /** Optional shorter alias */
-    fun getDb(): DatabaseService = getDatabase()
+        app.serviceManager.require(DatabaseService::class)
 
     /**
-     * Registers a DAO so that its schema is updated automatically.
-     *
-     * Should be called by modules/services during setup.
+     * Returns or instantiates the DAO for the given class.
+     * Automatically creates missing tables.
      */
-    fun registerSchema(dao: BaseDao<*>) {
-        registeredDaos += dao
-    }
+    @Suppress("UNCHECKED_CAST")
+    fun <T : BaseDao<*>> getSchema(clazz: KClass<T>): T {
+        // Already exists in cache
+        daoCache[clazz]?.let { return it as T }
 
-    /**
-     * Registers multiple DAOs at once.
-     */
-    fun registerSchemas(vararg daos: BaseDao<*>) {
-        registeredDaos += daos
-    }
+        val db = getDatabase()
 
-    override suspend fun onEnable() {
-        super.onEnable()
-        applyUpdates()
-    }
+        // Instantiate DAO
+        val ctor = clazz.primaryConstructor
+            ?: error("${clazz.simpleName} must have a primary constructor(DatabaseService)")
 
+        val instance = ctor.call(db)
 
-    /**
-     * Performs schema updates for all registered DAOs.
-     *
-     * Must be called manually by a plugin or service.
-     */
-    private fun applyUpdates() {
-        app.scheduler.run {
-            log("Starting schema updates for ${registeredDaos.size} tables...")
-
-            for (dao in registeredDaos) {
-                try {
-                    dao.updateSchema()
-                    log("✔ Updated schema for table: ${dao.table.tableName}")
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
-                    log("✘ Failed to update schema for ${dao.table.tableName}: ${ex.message}")
-                }
-            }
-
-            log("Schema update complete.")
+        // Create/update table schema
+        transaction(db.db) {
+            SchemaUtils.createMissingTablesAndColumns(instance.table)
         }
+
+        // Cache it
+        daoCache[clazz] = instance
+        return instance
+    }
+
+    /**
+     * registerSchema: alias for getSchema but returns Unit
+     *
+     * This is mainly for plugin load-time registration,
+     * where you want a single clean call like:
+     *
+     *     schema.registerSchema(UserDao::class)
+     */
+    fun registerSchema(clazz: KClass<out BaseDao<*>>) {
+        getSchema(clazz)
     }
 }

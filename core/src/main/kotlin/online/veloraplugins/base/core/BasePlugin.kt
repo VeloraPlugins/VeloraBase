@@ -79,8 +79,8 @@ abstract class BasePlugin {
     fun initialize() {
         this.initDataFolder()
         this.initServices()
-        this.registerCoreServices()
         this.initBaseConfig()
+        this.registerCoreServices()
     }
 
     /**
@@ -117,6 +117,7 @@ abstract class BasePlugin {
 
     private fun registerCoreServices() {
         this.serviceManager.registerInstance(SchedulerService(this))
+        this.serviceManager.enableServiceBlocking(SchedulerService::class)
     }
 
     /**

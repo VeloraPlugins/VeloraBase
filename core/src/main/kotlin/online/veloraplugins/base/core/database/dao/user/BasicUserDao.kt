@@ -5,6 +5,7 @@ import online.veloraplugins.base.core.database.dao.BaseDao
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import java.util.*
 
 class BasicUserDao(
