@@ -11,6 +11,13 @@ import eu.okaeri.configs.annotation.Comment
  */
 class MySQLConfig : OkaeriConfig() {
 
+
+    @Comment("If true, SQLite will be used instead of MySQL/MariaDB.")
+    var useSQLite: Boolean = true
+
+    @Comment("The path to the SQLite database file (only used when useSQLite = true).")
+    var sqliteFile: String = "database.db"
+
     @Comment("The address of the MySQL/MariaDB server")
     var host: String = "127.0.0.1"
 

@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
 import java.sql.Connection
 
 class DatabaseService(
@@ -19,28 +20,47 @@ class DatabaseService(
 
     private val config: MySQLConfig = app.pluginConfig.mysql
 
-    private lateinit var hikari: HikariDataSource
+    private var hikari: HikariDataSource? = null
     lateinit var db: Database
         private set
 
     override suspend fun onEnable() {
-        setupPool()
-        connectExposed()
-        testConnection()
-
-        log("Database connected → ${config.host}:${config.database}")
+        if (config.useSQLite) {
+            connectSQLite()
+            log("SQLite connected → ${config.sqliteFile}")
+        } else {
+            setupPool()
+            connectExposed()
+            testConnection()
+            log("MySQL connected → ${config.host}:${config.database}")
+        }
     }
 
     override suspend fun onDisable() {
-        if (::hikari.isInitialized) {
-            hikari.close()
-        }
-        log("Closed HikariCP pool")
+        hikari?.close()
+        log("Closed database connection")
+    }
+
+    /**
+     * -------------------------
+     * SQLite
+     * -------------------------
+     */
+    private fun connectSQLite() {
+        val file = File(app.dataFolder, config.sqliteFile)
+        file.parentFile.mkdirs()
+
+        db = Database.connect(
+            url = "jdbc:sqlite:${file.absolutePath}",
+            driver = "org.sqlite.JDBC"
+        )
+
+        TransactionManager.manager.defaultIsolationLevel =
+            Connection.TRANSACTION_SERIALIZABLE
     }
 
     private fun setupPool() {
         val cfg = HikariConfig().apply {
-
             jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"
 
             username = config.user
@@ -63,8 +83,7 @@ class DatabaseService(
     }
 
     private fun connectExposed() {
-        db = Database.connect(hikari)
-
+        db = Database.connect(hikari!!)
         TransactionManager.manager.defaultIsolationLevel =
             Connection.TRANSACTION_REPEATABLE_READ
     }
@@ -79,7 +98,6 @@ class DatabaseService(
 
     /**
      * Coroutine-friendly query wrapper.
-     * Ensures SQL runs on Dispatchers.IO.
      */
     suspend fun <T> query(block: Transaction.() -> T): T =
         withContext(Dispatchers.IO) {
