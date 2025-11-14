@@ -45,6 +45,12 @@ allprojects {
         implementation("eu.okaeri:okaeri-configs:5.0.6")
         implementation("eu.okaeri:okaeri-configs-serdes-commons:5.0.6")
         implementation("eu.okaeri:okaeri-configs-yaml-snakeyaml:5.0.6")
+
+        implementation("org.mariadb.jdbc:mariadb-java-client:3.5.4")
+        implementation("com.zaxxer:HikariCP:7.0.0")
+        implementation("org.jetbrains.exposed:exposed-jdbc:0.51.1")
+        implementation("org.jetbrains.exposed:exposed-dao:0.51.1")
+        implementation("org.jetbrains.exposed:exposed-core:0.51.1")
     }
 
     java {

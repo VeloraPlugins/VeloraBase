@@ -1,6 +1,7 @@
 package online.veloraplugins.base.core.configuration
 
 import eu.okaeri.configs.OkaeriConfig
+import eu.okaeri.configs.annotation.Comment
 
 /**
  * Base configuration for all plugins running on VeloraBase.
@@ -21,4 +22,11 @@ class BaseConfig : OkaeriConfig() {
      * - Useful during development or troubleshooting
      */
     var debug: Boolean = false
+
+    /**
+     * MySQL database settings.
+     * Used by DatabaseService to configure the MariaDB/HikariCP pool.
+     */
+    @Comment("MySQL database settings")
+    var mysql: MySQLConfig = MySQLConfig()
 }
