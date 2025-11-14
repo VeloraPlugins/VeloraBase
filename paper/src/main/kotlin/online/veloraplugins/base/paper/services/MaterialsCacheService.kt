@@ -3,7 +3,9 @@ package online.veloraplugins.base.paper.services
 import online.veloraplugins.base.core.service.Service
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import org.bukkit.Material
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 /**
@@ -62,11 +64,12 @@ class MaterialsCacheService(
 
     override val dependsOn: Set<KClass<out Service>> = emptySet()
 
-    /** Map of lowercase material names → Material object */
-    private val materialByName = ConcurrentHashMap<String, Material>()
 
-    /** Reverse lookup map of Material → lowercase name */
-    private val nameByMaterial = ConcurrentHashMap<Material, String>()
+    /** Immutable map of lowercase material names → Material */
+    private lateinit var materialByName: Map<String, Material>
+
+    /** Immutable reverse lookup map Material → lowercase name */
+    private lateinit var nameByMaterial: Map<Material, String>
 
     /**
      * Loads all Bukkit material names into two lookup maps.
@@ -81,9 +84,7 @@ class MaterialsCacheService(
      * Clears all cached materials when the service shuts down.
      */
     override suspend fun onDisable() {
-        materialByName.clear()
-        nameByMaterial.clear()
-        log("Cleared materials cache")
+        log("Materials cache unloaded")
     }
 
     /**
@@ -91,13 +92,19 @@ class MaterialsCacheService(
      * Uses lowercase keys for case-insensitive matching.
      */
     private fun loadMaterials() {
-        for (mat in Material.entries) {
-            val name = mat.name.lowercase()
-            materialByName[name] = mat
-            nameByMaterial[mat] = name
-        }
-    }
+        val nameToMat = HashMap<String, Material>(Material.entries.size)
+        val matToName = HashMap<Material, String>(Material.entries.size)
 
+        for (mat in Material.entries) {
+            val key = mat.name.lowercase()
+            nameToMat[key] = mat
+            matToName[mat] = key
+        }
+
+        // Make them truly immutable
+        materialByName = Collections.unmodifiableMap(nameToMat)
+        nameByMaterial = Collections.unmodifiableMap(matToName)
+    }
     /**
      * Gets a material by its name (case-insensitive).
      *
@@ -135,8 +142,10 @@ class MaterialsCacheService(
      */
     fun search(query: String): List<Material> {
         val q = query.lowercase()
-        return materialByName.entries
-            .filter { it.key.contains(q) }
+        return materialByName
+            .asSequence()
+            .filter { (name, _) -> name.contains(q) }
             .map { it.value }
+            .toList()
     }
 }
