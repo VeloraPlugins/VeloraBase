@@ -6,40 +6,53 @@ import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
-import kotlin.reflect.KClass
 
 /**
  * AbstractPaperService extends [AbstractService] with built-in support for
- * Bukkit/Paper event listeners.
+ * Bukkit/Paper event listener management.
  *
- * Any Paper-specific service that needs to listen for events should inherit
- * from this class.
+ * ## Features
+ * - Optional automatic registration of the service itself as a listener
+ * - Ability to register arbitrary additional listeners
+ * - Automatic unregistration on disable
  *
- * Features:
- *  - Automatic listener registration during onEnable()
- *  - Automatic listener unregistration during onDisable()
- *  - Thread-safe listener storage
+ * ## Auto Self-Registration
+ * By default, the service registers itself (`this`) as a listener during [onEnable].
  *
- * Services extending this class should call:
+ * To disable this behavior:
  *
- *      registerListener(MyListener())
+ * ```
+ * override suspend fun onEnable() {
+ *     super.onEnable(autoRegisterSelf = false)
+ *     registerListener(MyListener())
+ * }
+ * ```
  *
- * inside their onEnable() implementation.
+ * @param app The [PaperBasePlugin] instance to register listeners with.
  */
 abstract class AbstractPaperService(
     private val app: PaperBasePlugin
-) : AbstractService(app.base()) {
+) : AbstractService(app.base()), Listener {
 
-    /** Internal storage for all listeners registered by this service */
+    /** Internal storage for listeners registered by this service. */
     private val listeners = mutableListOf<Listener>()
 
     /**
-     * Registers a Bukkit/Paper event listener for this service.
+     * Lifecycle hook called when the service is enabled.
      *
-     * This MUST only be used inside onEnable() since listeners will be automatically
-     * unregistered when the service shuts down.
+     * @param autoRegisterSelf Whether this service should automatically register itself
+     * as a Bukkit event listener. Default is `true`.
+     */
+    open suspend fun onEnable(autoRegisterSelf: Boolean = false) {
+        if (autoRegisterSelf) {
+            registerSelf()
+        }
+    }
+
+    /**
+     * Registers a Bukkit/Paper listener and tracks it internally for cleanup.
      *
-     * @param listener The event listener instance to register.
+     * @param listener The listener to register.
      */
     protected fun registerListener(listener: Listener) {
         listeners += listener
@@ -47,12 +60,18 @@ abstract class AbstractPaperService(
     }
 
     /**
-     * Ensures all listeners registered by this service are unregistered when the
-     * service is disabled.
+     * Unregisters all listeners registered by this service.
      */
     override suspend fun onDisable() {
         listeners.forEach { HandlerList.unregisterAll(it) }
         listeners.clear()
         super.onDisable()
+    }
+
+    /**
+     * Registers this service instance as a listener.
+     */
+    protected fun registerSelf() {
+        registerListener(this)
     }
 }
