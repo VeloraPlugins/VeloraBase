@@ -2,30 +2,34 @@ package online.veloraplugins.base.paper.services
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.paper.plugin.PaperBasePlugin
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 class PlaceholderAPIService(
-    private val app: BasePlugin,
+    private val app: PaperBasePlugin,
     private val namespace: String
-) : AbstractService(app) {
+) : AbstractService(app.base()) {
 
     private val placeholders = ConcurrentHashMap<String, suspend (Player) -> String>()
 
     private var expansion: Expansion? = null
 
-    override val dependsOn: Set<KClass<out Service>> = emptySet()
+    override val dependsOn = setOf<KClass<out Service>>(SchedulerService::class)
 
     override suspend fun onEnable() {
-        expansion = Expansion(namespace, placeholders).also {
-            it.register()
-        }
-        log("Registered PlaceholderAPI namespace: $namespace")
+        Bukkit.getScheduler().runTask(app, Runnable {
+            expansion = Expansion(namespace, placeholders).also {
+                it.register()
+            }
+            log("Registered PlaceholderAPI namespace: $namespace")
+        })
     }
-
     override suspend fun onDisable() {
         expansion?.unregister()
         expansion = null

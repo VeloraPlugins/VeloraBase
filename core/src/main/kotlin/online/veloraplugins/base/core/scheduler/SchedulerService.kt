@@ -37,6 +37,12 @@ class SchedulerService(
         this.schedulerScope.launch { task() }
 
     /**
+     * Runs a task synchronously using Dispatchers.Main.
+     */
+    fun runSync(task: suspend () -> Unit): Job =
+        this.schedulerScope.launch(Dispatchers.Main) { task() }
+
+    /**
      * Runs a task asynchronously using Dispatchers.Default.
      */
     fun runAsync(task: suspend () -> Unit): Job =
