@@ -1,6 +1,5 @@
 package online.veloraplugins.base.paper.services
 
-import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import org.bukkit.Bukkit

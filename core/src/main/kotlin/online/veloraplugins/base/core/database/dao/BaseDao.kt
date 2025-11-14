@@ -2,7 +2,6 @@ package online.veloraplugins.base.core.database.dao
 
 import online.veloraplugins.base.core.database.core.DatabaseService
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SchemaUtils
 
 /**
  * BaseDAO provides a clean coroutine-friendly structure for DAOs using Exposed.

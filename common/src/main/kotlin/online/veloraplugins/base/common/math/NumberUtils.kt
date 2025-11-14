@@ -3,8 +3,7 @@ package online.veloraplugins.base.common.math
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.text.DecimalFormat
-import java.util.NavigableMap
-import java.util.TreeMap
+import java.util.*
 
 /**
  * Utility object providing high-level numeric formatting and arithmetic helpers.

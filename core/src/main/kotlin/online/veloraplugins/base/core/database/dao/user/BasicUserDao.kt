@@ -2,7 +2,9 @@ package online.veloraplugins.base.core.database.dao.user
 
 import online.veloraplugins.base.core.database.core.DatabaseService
 import online.veloraplugins.base.core.database.dao.BaseDao
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.insertIgnore
+import org.jetbrains.exposed.sql.select
 import java.util.*
 
 class BasicUserDao(

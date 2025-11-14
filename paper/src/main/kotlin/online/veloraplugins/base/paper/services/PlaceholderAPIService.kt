@@ -1,7 +1,6 @@
 package online.veloraplugins.base.paper.services
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion
-import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
