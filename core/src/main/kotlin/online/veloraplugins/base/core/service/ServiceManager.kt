@@ -49,6 +49,13 @@ class ServiceManager(
         return service
     }
 
+    fun <T : Service> registerInstance(type: KClass<out Service>, service: T) {
+        require(!services.containsKey(type)) {
+            "Service ${type.simpleName} is already registered"
+        }
+        services[type] = service
+    }
+
     /**
      * Registers a service using a factory function.
      *

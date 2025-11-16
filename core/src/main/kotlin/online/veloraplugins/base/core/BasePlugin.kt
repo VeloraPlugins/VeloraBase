@@ -15,11 +15,11 @@ import java.util.logging.Logger
  * - A unified lifecycle (initialize, onLoad, onEnable, onDisable)
  * - Automatic creation of the plugin data directory
  * - Service management (via ServiceManager)
- * - Coroutine scope tied to the plugin lifecycle
+ * - Coroutine scope tied to the plugin lifecycle (platform-provided or fallback)
  * - Auto-loaded BaseConfig containing common settings (e.g., debugging)
  *
  * Platform-specific plugins (e.g., Paper, Velocity) should extend their
- * respective platform adapters (PaperBasePlugin, VelocityBasePlugin), not this class directly.
+ * respective adapters (PaperBasePlugin, VelocityBasePlugin), not this class directly.
  */
 abstract class BasePlugin {
 
@@ -27,7 +27,7 @@ abstract class BasePlugin {
      * Provides access to the global scheduler service.
      *
      * Lazy-loaded so it becomes available only after initialize() has
-     * registered the service via registerCoreServices().
+     * registered the SchedulerService instance.
      */
     val scheduler: SchedulerService by lazy {
         serviceManager.require<SchedulerService>()
@@ -42,38 +42,55 @@ abstract class BasePlugin {
         private set
 
     /**
-     * Config service responsible for loading and binding Okaeri config files.
+     * Responsible for loading and binding Okaeri config files.
      * Each platform provides its own implementation.
      */
     lateinit var configService: AbstractConfigService
         private set
 
     /**
-     * The global configuration available to every plugin.
+     * The global base configuration available to every plugin.
      * Automatically created when BasePlugin initializes.
      */
     lateinit var pluginConfig: BaseConfig
         private set
 
     /**
-     * CoroutineScope tied to the plugin lifecycle.
-     * Cancelled during onDisable().
+     * Optional platform-specific coroutine scope.
+     *
+     * - Paper should override this to return the MCCoroutine plugin scope.
+     * - Velocity usually does not override this.
      */
-    abstract val scope: CoroutineScope
+    open val platformScope: CoroutineScope? = null
 
     /**
-     * Initializes the VeloraBase context.
-     * Should be called by the platform adapter during onLoad().
+     * Final coroutine scope used everywhere in the system.
      *
+     * Resolves to:
+     * - The platformScope (if the platform provides its own threading model)
+     * - OR a safe fallback SupervisorJob scope (default for non-Paper platforms)
+     *
+     * This ensures the entire plugin architecture always has a valid coroutine scope.
+     */
+    val scope: CoroutineScope by lazy {
+        platformScope ?: CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    }
+
+    /**
+     * Initializes the VeloraBase core before the platform fully loads.
+     *
+     * Should be called by the platform adapter during onLoad().
      * Performs:
      * - Data folder creation
-     * - ServiceManager & ConfigService setup
+     * - ServiceManager & ConfigService creation
      * - BaseConfig loading
+     * - Registration of core services (SchedulerService)
      */
     fun initialize() {
         initDataFolder()
         initServices()
         initBaseConfig()
+        registerCoreServices()
     }
 
     /**
@@ -84,8 +101,8 @@ abstract class BasePlugin {
     }
 
     /**
-     * Creates the ServiceManager and ConfigService.
-     * Implemented by each platform adapter.
+     * Creates ServiceManager and configuration service.
+     * ConfigService implementation is provided per platform.
      */
     private fun initServices() {
         serviceManager = ServiceManager(this)
@@ -100,30 +117,50 @@ abstract class BasePlugin {
     }
 
     /**
+     * Registers core VeloraBase services required on every platform.
+     * SchedulerService is always required by the infrastructure.
+     */
+    private fun registerCoreServices() {
+        serviceManager.registerInstance(SchedulerService(this))
+    }
+
+    /**
      * Called before the plugin fully enables.
-     * Platform adapters should call super.onLoad().
+     *
+     * PLEASE NOTE:
+     * - No coroutines should be launched here yet.
+     * - Paper's MCCoroutine infrastructure is not active until onEnable().
      */
     open fun onLoad() {
         logger.info("Loading BasePlugin...")
+
+        // Enable scheduler first, blocking and safe for both Paper & Velocity.
+        runBlocking {
+            serviceManager.enableService(SchedulerService::class)
+        }
     }
 
     /**
      * Enables the plugin and all registered services.
+     *
+     * ServiceManager.enableAll() is suspend, but calling blocking here
+     * ensures predictable plugin startup without coroutine issues.
      */
     open fun onEnable() {
         logger.info("Enabling BasePlugin...")
-        scope.launch {
+
+        runBlocking {
             serviceManager.enableAll()
         }
     }
 
     /**
-     * Disables the plugin and shuts down services and coroutines.
+     * Disables the plugin, shuts down services, then terminates the main scope.
      */
     open fun onDisable() {
         logger.info("Disabling BasePlugin...")
 
-        scope.launch {
+        runBlocking {
             serviceManager.disableAll()
         }
 
@@ -131,20 +168,19 @@ abstract class BasePlugin {
     }
 
     /**
-     * Emits a debug log message if debug mode is enabled.
+     * Debug logging helper (bound to BaseConfig.debug).
      */
     open fun debug(message: String, vararg args: Any) {
-        if (this.isDebugEnabled()) {
-            this.logger.info("[DEBUG] " + message.format(*args))
+        if (isDebugEnabled()) {
+            logger.info("[DEBUG] " + message.format(*args))
         }
     }
 
     /**
-     * Determines whether debug mode is active, based on the BaseConfig.
+     * Returns true if debugging is enabled in base-settings.yml.
      */
     open fun isDebugEnabled(): Boolean =
-        this.pluginConfig.debug
-
+        pluginConfig.debug
 
     /** Logging adapter for the current platform. */
     abstract val logger: Logger

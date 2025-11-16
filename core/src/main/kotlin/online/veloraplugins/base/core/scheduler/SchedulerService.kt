@@ -1,55 +1,62 @@
 package online.veloraplugins.base.core.scheduler
 
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.service.AbstractService
 import java.util.concurrent.TimeUnit
 
 /**
- * Abstract scheduler service.
+ * Platform-agnostic coroutine scheduler.
  *
- * Concrete implementations must provide actual scheduling logic
- * for the specific platform (Velocity, Paper, etc.).
+ * Uses the platform-provided plugin.scope, allowing each platform
+ * to define its threading model (Paper: MCCoroutine scope,
+ * Velocity: default coroutine scope, etc.)
  */
-abstract class SchedulerService(
-    plugin: BasePlugin
+class SchedulerService(
+    private val plugin: BasePlugin
 ) : AbstractService(plugin) {
 
+    private val scope: CoroutineScope
+        get() = plugin.scope
+
     override suspend fun onEnable() {
-        log("SchedulerService enabled (abstract)")
+        log("SchedulerService enabled")
     }
 
     override suspend fun onDisable() {
-        log("SchedulerService disabled (abstract)")
+        log("SchedulerService disabled")
     }
 
-    /**
-     * Runs a task immediately.
-     */
-    abstract fun run(task: suspend () -> Unit): Job
+    /** Runs a task immediately. */
+    fun run(task: suspend () -> Unit): Job =
+        scope.launch { task() }
 
-    /**
-     * Runs a task synchronously on main thread.
-     */
-    abstract fun runSync(task: suspend () -> Unit): Job
+    /** Runs a task synchronously on the main thread (via Dispatchers.Main). */
+    fun runSync(task: suspend () -> Unit): Job =
+        scope.launch(Dispatchers.Main) { task() }
 
-    /**
-     * Runs a task asynchronously.
-     */
-    abstract fun runAsync(task: suspend () -> Unit): Job
+    /** Runs a task asynchronously (Dispatchers.Default). */
+    fun runAsync(task: suspend () -> Unit): Job =
+        scope.launch(Dispatchers.Default) { task() }
 
-    /**
-     * Runs a task after a delay.
-     */
-    abstract fun runLater(delay: Long, unit: TimeUnit, task: suspend () -> Unit): Job
+    /** Runs a task after a delay. */
+    fun runLater(delay: Long, unit: TimeUnit, task: suspend () -> Unit): Job =
+        scope.launch {
+            delay(unit.toMillis(delay))
+            task()
+        }
 
-    /**
-     * Runs a repeating task with an initial delay.
-     */
-    abstract fun runRepeating(
+    /** Runs a repeating scheduled task. */
+    fun runRepeating(
         initialDelay: Long,
         repeat: Long,
         unit: TimeUnit,
         task: suspend () -> Unit
-    ): Job
+    ): Job = scope.launch {
+        delay(unit.toMillis(initialDelay))
+        while (isActive) {
+            task()
+            delay(unit.toMillis(repeat))
+        }
+    }
 }
