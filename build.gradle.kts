@@ -6,6 +6,7 @@ val JVM_VERSION = 21
 plugins {
     kotlin("jvm") version "2.1.10" apply true
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
+    id("maven-publish")
 }
 
 group = "online.veloraplugins"
@@ -30,6 +31,7 @@ allprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "kotlin")
     apply(plugin = "com.github.johnrengelman.shadow")
+    apply(plugin = "maven-publish")
 
     repositories {
         mavenCentral()
@@ -74,5 +76,16 @@ allprojects {
         archiveFileName.set("${project.rootProject.name}-${project.name.capitalize()}.jar")
         archiveClassifier.set("")
         destinationDirectory.set(project.rootProject.layout.buildDirectory.dir("libs"))
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("mavenJava") {
+                groupId = project.group.toString()
+                artifactId = project.name
+                version = project.version.toString()
+                artifact(tasks.named("shadowJar"))
+            }
+        }
     }
 }
