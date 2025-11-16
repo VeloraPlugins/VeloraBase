@@ -1,15 +1,11 @@
 package online.veloraplugins.base.core
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.core.configuration.BaseConfig
 import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.core.service.ServiceManager
 import java.io.File
-import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -63,9 +59,7 @@ abstract class BasePlugin {
      * CoroutineScope tied to the plugin lifecycle.
      * Cancelled during onDisable().
      */
-    open val scope: CoroutineScope by lazy {
-        CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    }
+    abstract val scope: CoroutineScope
 
     /**
      * Initializes the VeloraBase context.
@@ -77,23 +71,16 @@ abstract class BasePlugin {
      * - BaseConfig loading
      */
     fun initialize() {
-        this.initDataFolder()
-        this.initServices()
-        this.initBaseConfig()
-        this.registerCoreServices()
+        initDataFolder()
+        initServices()
+        initBaseConfig()
     }
 
     /**
      * Ensures the plugin data directory exists.
      */
     private fun initDataFolder() {
-        try {
-            if (!this.dataFolder.exists()) {
-                this.dataFolder.mkdirs()
-            }
-        } catch (ex: Exception) {
-            this.logger.log(Level.SEVERE, "Unable to create plugin directory: ${this.dataFolder.path}", ex)
-        }
+        if (!dataFolder.exists()) dataFolder.mkdirs()
     }
 
     /**
@@ -101,23 +88,15 @@ abstract class BasePlugin {
      * Implemented by each platform adapter.
      */
     private fun initServices() {
-        this.serviceManager = ServiceManager(this)
-        this.configService = this.createConfigService()
+        serviceManager = ServiceManager(this)
+        configService = createConfigService()
     }
 
     /**
      * Loads the shared base-settings.yml configuration.
      */
     private fun initBaseConfig() {
-        this.pluginConfig = this.configService.create(
-            BaseConfig::class,
-            "base-settings.yml"
-        )
-    }
-
-    private fun registerCoreServices() {
-        this.serviceManager.registerInstance(SchedulerService(this))
-        this.serviceManager.enableServiceBlocking(SchedulerService::class)
+        pluginConfig = configService.create(BaseConfig::class, "base-settings.yml")
     }
 
     /**
@@ -125,24 +104,30 @@ abstract class BasePlugin {
      * Platform adapters should call super.onLoad().
      */
     open fun onLoad() {
-        this.logger.info("Loading BasePlugin...")
+        logger.info("Loading BasePlugin...")
     }
 
     /**
      * Enables the plugin and all registered services.
      */
     open fun onEnable() {
-        this.logger.info("Enabling BasePlugin...")
-        this.serviceManager.enableAllBlocking()
+        logger.info("Enabling BasePlugin...")
+        scope.launch {
+            serviceManager.enableAll()
+        }
     }
 
     /**
      * Disables the plugin and shuts down services and coroutines.
      */
     open fun onDisable() {
-        this.logger.info("Disabling BasePlugin...")
-        this.serviceManager.disableAllBlocking()
-        this.scope.cancel()
+        logger.info("Disabling BasePlugin...")
+
+        scope.launch {
+            serviceManager.disableAll()
+        }
+
+        scope.cancel()
     }
 
     /**
@@ -160,7 +145,6 @@ abstract class BasePlugin {
     open fun isDebugEnabled(): Boolean =
         this.pluginConfig.debug
 
-    // Abstract API surface required by platform adapters:
 
     /** Logging adapter for the current platform. */
     abstract val logger: Logger

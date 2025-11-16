@@ -29,6 +29,7 @@ class PlaceholderAPIService(
             log("Registered PlaceholderAPI namespace: $namespace")
         })
     }
+
     override suspend fun onDisable() {
         expansion?.unregister()
         expansion = null
@@ -44,16 +45,6 @@ class PlaceholderAPIService(
      */
     fun register(id: String, handler: (Player) -> String) {
         placeholders[id.lowercase()] = { player -> handler(player) }
-    }
-
-    /**
-     * Registers an asynchronous placeholder.
-     *
-     * Usage:
-     *    registerAsync("coins") { player -> db.getCoins(player) }
-     */
-    fun registerAsync(id: String, handler: suspend (Player) -> String) {
-        placeholders[id.lowercase()] = handler
     }
 
     /**

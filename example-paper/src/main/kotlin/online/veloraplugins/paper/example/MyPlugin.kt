@@ -13,7 +13,6 @@ import online.veloraplugins.base.paper.services.MaterialsCacheService
 import online.veloraplugins.base.paper.services.PlaceholderAPIService
 import online.veloraplugins.paper.example.language.ExampleMessage
 import online.veloraplugins.paper.example.service.ExampleService
-import org.intellij.lang.annotations.Language
 
 class MyPlugin : PaperBasePlugin() {
 

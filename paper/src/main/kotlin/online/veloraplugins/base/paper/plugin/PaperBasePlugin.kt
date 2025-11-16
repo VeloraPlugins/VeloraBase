@@ -1,25 +1,22 @@
 package online.veloraplugins.base.paper.plugin
 
+import com.github.shynixn.mccoroutine.bukkit.scope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.AbstractConfigService
+import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.paper.config.PaperConfigService
+import online.veloraplugins.base.paper.scheduler.PaperSchedulerService
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.util.logging.Logger
 
-/**
- * Paper-specific implementation of the BasePlugin abstraction.
- *
- * Bridges the VeloraBase core into the Paper/Bukkit ecosystem by providing:
- * - Bukkit logger
- * - Bukkit data folder
- * - Bukkit lifecycle integration
- * - Paper-compatible config service
- * - Automatic service enabling/disabling
- */
 abstract class PaperBasePlugin : JavaPlugin() {
 
     private val base = object : BasePlugin() {
+
+        override val scope = this@PaperBasePlugin.scope
 
         override val logger: Logger
             get() = this@PaperBasePlugin.logger
@@ -30,32 +27,29 @@ abstract class PaperBasePlugin : JavaPlugin() {
         override val pluginVersion: String
             get() = this@PaperBasePlugin.description.version
 
-        /**
-         * Paper/Bukkit configurer and serdes setup.
-         */
         override fun createConfigService(): AbstractConfigService =
             PaperConfigService(this@PaperBasePlugin)
-
     }
 
     override fun onLoad() {
-        this.base.initialize()
-        this.base.onLoad()
+        base.initialize()
+
+        base.serviceManager.registerInstance(PaperSchedulerService(this))
+
+        base.onLoad()
         super.onLoad()
     }
 
+
     override fun onEnable() {
-        this.base.onEnable()
+        base.onEnable()
         super.onEnable()
     }
 
     override fun onDisable() {
-        this.base.onDisable()
+        base.onDisable()
         super.onDisable()
     }
 
-    /**
-     * Provides direct access to the VeloraBase BasePlugin instance.
-     */
-    fun base(): BasePlugin = this.base
+    fun base(): BasePlugin = base
 }

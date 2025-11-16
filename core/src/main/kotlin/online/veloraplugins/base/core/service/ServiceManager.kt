@@ -90,28 +90,6 @@ class ServiceManager(
     inline fun <reified S : Service> require(): S = this.require(S::class)
 
     /**
-     * Enables all registered services in dependency order.
-     * This method blocks the current thread and should be used
-     * during synchronous plugin startup (e.g., Paper onEnable).
-     */
-    fun enableAllBlocking() {
-        runBlocking(Dispatchers.Default) {
-            this@ServiceManager.enableAll()
-        }
-    }
-
-    /**
-     * Disables all services in reverse dependency order.
-     * This blocks the current thread and should be used during
-     * synchronous plugin shutdown.
-     */
-    fun disableAllBlocking() {
-        runBlocking(Dispatchers.Default) {
-            this@ServiceManager.disableAll()
-        }
-    }
-
-    /**
      * Enables all services asynchronously.
      *
      * Steps:
