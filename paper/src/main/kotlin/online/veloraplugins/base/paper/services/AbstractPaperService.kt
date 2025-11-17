@@ -42,7 +42,7 @@ abstract class AbstractPaperService(
      * @param autoRegisterSelf Whether this service should automatically register itself
      * as a Bukkit event listener. Default is `true`.
      */
-    open suspend fun onEnable(autoRegisterSelf: Boolean = false) {
+    open suspend fun onEnable(autoRegisterSelf: Boolean = true) {
         if (autoRegisterSelf) {
             registerSelf()
         }
