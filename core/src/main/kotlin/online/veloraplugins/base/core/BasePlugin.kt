@@ -121,7 +121,7 @@ abstract class BasePlugin {
      * SchedulerService is always required by the infrastructure.
      */
     private fun registerCoreServices() {
-        serviceManager.registerInstance(SchedulerService(this))
+        serviceManager.register(SchedulerService(this))
     }
 
     /**
@@ -133,11 +133,6 @@ abstract class BasePlugin {
      */
     open fun onLoad() {
         logger.info("Loading BasePlugin...")
-
-        // Enable scheduler first, blocking and safe for both Paper & Velocity.
-        runBlocking {
-            serviceManager.enableService(SchedulerService::class)
-        }
     }
 
     /**
@@ -150,7 +145,8 @@ abstract class BasePlugin {
         logger.info("Enabling BasePlugin...")
 
         runBlocking {
-            serviceManager.enableAll()
+            serviceManager.load()
+            serviceManager.enable()
         }
     }
 
@@ -161,7 +157,7 @@ abstract class BasePlugin {
         logger.info("Disabling BasePlugin...")
 
         runBlocking {
-            serviceManager.disableAll()
+            serviceManager.disable()
         }
 
         scope.cancel()

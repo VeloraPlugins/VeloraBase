@@ -6,12 +6,16 @@ import org.jetbrains.exposed.sql.*
 /**
  * BaseDAO provides a clean coroutine-friendly structure for DAOs using Exposed.
  *
- * Includes utility functions commonly needed by all database layers.
+ * DAOs must implement table(): T to define their table.
  */
 abstract class BaseDao<T : Table>(
     val db: DatabaseService,
-    val table: T
 ) {
+
+    /**
+     * Subclasses define the Exposed table instance.
+     */
+    protected abstract fun table(): T
 
     suspend fun init() {
         updateSchema()
@@ -21,28 +25,28 @@ abstract class BaseDao<T : Table>(
         db.query(block)
 
     suspend fun createTable() = query {
-        SchemaUtils.createMissingTablesAndColumns(table)
+        SchemaUtils.createMissingTablesAndColumns(table())
     }
 
     suspend fun dropTable() = query {
-        SchemaUtils.drop(table)
+        SchemaUtils.drop(table())
     }
 
     suspend fun clearTable() = query {
-        table.deleteAll()
+        table().deleteAll()
     }
 
     suspend fun updateSchema() = query {
-        SchemaUtils.createMissingTablesAndColumns(table)
+        SchemaUtils.createMissingTablesAndColumns(table())
     }
 
     suspend fun count(): Long = query {
-        table.selectAll().count()
+        table().selectAll().count()
     }
 
     suspend fun exists(predicate: SqlExpressionBuilder.() -> Op<Boolean>): Boolean =
         query {
-            table
+            table()
                 .selectAll()
                 .where(predicate)
                 .limit(1)
@@ -51,7 +55,7 @@ abstract class BaseDao<T : Table>(
 
     suspend fun <V> exists(column: Column<V>, value: V): Boolean =
         query {
-            table
+            table()
                 .selectAll()
                 .where { column eq value }
                 .limit(1)
@@ -60,7 +64,7 @@ abstract class BaseDao<T : Table>(
 
     suspend fun findOne(predicate: SqlExpressionBuilder.() -> Op<Boolean>): ResultRow? =
         query {
-            table
+            table()
                 .selectAll()
                 .where(predicate)
                 .limit(1)
@@ -69,10 +73,9 @@ abstract class BaseDao<T : Table>(
 
     suspend fun findMany(predicate: SqlExpressionBuilder.() -> Op<Boolean>): List<ResultRow> =
         query {
-            table
+            table()
                 .selectAll()
                 .where(predicate)
                 .toList()
         }
 }
-

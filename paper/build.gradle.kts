@@ -9,6 +9,7 @@ repositories {
 dependencies {
     // Project modules
     api(project(":core"))
+    api(project(":mc-common"))
 
     // Configuration (Okaeri)
     implementation("eu.okaeri:okaeri-configs-yaml-bukkit:5.0.6")

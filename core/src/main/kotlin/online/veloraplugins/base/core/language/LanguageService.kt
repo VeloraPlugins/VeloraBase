@@ -2,11 +2,13 @@ package online.veloraplugins.base.core.language
 
 import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.database.core.DatabaseService
 import online.veloraplugins.base.core.database.core.SchemaService
 import online.veloraplugins.base.core.database.dao.language.LanguageDao
 import online.veloraplugins.base.core.database.dao.language.LanguageEntry
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
+import org.jetbrains.exposed.sql.Database
 import kotlin.reflect.KClass
 
 /**
@@ -16,15 +18,16 @@ import kotlin.reflect.KClass
  * - Multi-language message loading
  * - Runtime caching
  * - Enum-based default insertion
- * - Reloads per enum or globally
- * - Fallback across languages
+ * - Reloading
+ * - Cross-language fallback
+ * - Per-sender language resolution
  */
 open class LanguageService(
     private val app: BasePlugin,
 ) : AbstractService(app) {
 
     override val dependsOn: Set<KClass<out Service>> =
-        setOf(SchemaService::class)
+        setOf(DatabaseService::class, SchemaService::class)
 
     /** DAO for DB communication */
     private lateinit var dao: LanguageDao
@@ -36,22 +39,47 @@ open class LanguageService(
     var defaultLanguage = McLanguage.EN_US
 
     /**
-     * Map of which enums belong to which language.
+     * Stores name → enumClass per language.
      *
      * Example:
-     *   EN_US -> [ExampleMessage::class.java]
-     *   NL_NL -> [ExampleMessage::class.java, DutchMessage::class.java]
+     * EN_US -> [ExampleMessage::class]
+     * NL_NL -> [ExampleMessage::class]
      */
     private val registeredEnumMap =
         mutableMapOf<McLanguage, MutableList<Class<out BaseMessage>>>()
 
+
+    /** Platform-specific language resolver (Bukkit/Velocity/etc) */
+    private var languageResolver: ((Any) -> McLanguage?)? = null
+
     override suspend fun onEnable() {
-        val schema = app.serviceManager.require(SchemaService::class)
-        dao = schema.getSchema(LanguageDao::class)
+        val schemaService = app.serviceManager.require(SchemaService::class)
+        dao = schemaService.register(LanguageDao::class)
+        super.onEnable()
     }
 
     /**
-     * Registers an enum class for a specific language.
+     * Assign a resolver callback that extracts the user's preferred language.
+     *
+     * Example usage (Paper):
+     * languageService.setLanguageResolver { sender ->
+     *     if (sender is Player) userService.fromCache(sender.uniqueId)?.lang
+     * }
+     */
+    fun setLanguageResolver(resolver: (Any) -> McLanguage?) {
+        this.languageResolver = resolver
+    }
+
+    /**
+     * Resolves the language for a given sender.
+     * If resolver returns null, fallback → defaultLanguage.
+     */
+    fun resolve(sender: Any): McLanguage {
+        return languageResolver?.invoke(sender) ?: defaultLanguage
+    }
+
+    /**
+     * Register an enum for one specific language.
      */
     fun registerEnum(language: McLanguage, enumClass: Class<out BaseMessage>) {
         registeredEnumMap
@@ -60,7 +88,7 @@ open class LanguageService(
     }
 
     /**
-     * Registers one enum class for ALL languages.
+     * Register an enum for ALL languages.
      */
     fun registerEnumForAllLanguages(enumClass: Class<out BaseMessage>) {
         for (lang in McLanguage.entries) {
@@ -69,7 +97,7 @@ open class LanguageService(
     }
 
     /**
-     * Loads cached values from DB only for keys belonging to this enum.
+     * Load cached values from DB only for keys belonging to this enum.
      */
     fun load(enumClass: Class<out BaseMessage>) {
         app.scheduler.runAsync {
@@ -78,6 +106,7 @@ open class LanguageService(
                 if (!enums.contains(enumClass)) continue
 
                 val langCode = language.code
+
                 val dbMap = dao.getAll(langCode)
                 val cacheMap = cache.computeIfAbsent(langCode) { mutableMapOf() }
 
@@ -93,21 +122,20 @@ open class LanguageService(
     }
 
     /**
-     * Reloads a single enum for all languages where it is registered.
+     * Reload a specific enum for all languages where it is registered.
      */
     fun reload(enumClass: Class<out BaseMessage>) {
         app.scheduler.runAsync {
 
             for ((language, enums) in registeredEnumMap) {
                 if (!enums.contains(enumClass)) continue
-
                 reloadEnumForLanguage(language, enumClass)
             }
         }
     }
 
     /**
-     * Reload all keys from this enum for one specific language.
+     * Reloads a single enum for one language.
      */
     private fun reloadEnumForLanguage(language: McLanguage, enumClass: Class<out BaseMessage>) {
         app.scheduler.runAsync {
@@ -116,17 +144,17 @@ open class LanguageService(
             val existingDb = dao.getAll(langCode)
             val cacheMap = cache.computeIfAbsent(langCode) { mutableMapOf() }
 
-            // Remove previous values for this enum
-            val enumKeys = enumClass.enumConstants.map { it.key }.toSet()
-            cacheMap.keys.removeAll(enumKeys)
+            // Remove old keys for this enum
+            val toRemove = enumClass.enumConstants.map { it.key }.toSet()
+            cacheMap.keys.removeAll(toRemove)
 
-            // Reload values
+            // Re-insert
             for (msg in enumClass.enumConstants) {
                 val dbEntry = existingDb[msg.key]
+
                 if (dbEntry != null) {
                     cacheMap[msg.key] = dbEntry
                 } else {
-                    // Create missing default entry
                     val entry = LanguageEntry(
                         language = language,
                         key = msg.key,
@@ -146,10 +174,7 @@ open class LanguageService(
     }
 
     /**
-     * Reloads the entire language system:
-     * - Clears cache
-     * - Reloads all DB values
-     * - Applies missing defaults for all registered enums
+     * Reload everything.
      */
     fun reloadAll() {
         app.scheduler.runAsync {
@@ -166,16 +191,36 @@ open class LanguageService(
         }
     }
 
-    fun get(message: BaseMessage, language: McLanguage = defaultLanguage): String {
-        return getEntry(message, language).value
+    /**
+     * Get message using ONLY default language.
+     * (Used internally)
+     */
+    fun get(message: BaseMessage): String {
+        return getEntry(message, defaultLanguage).value
     }
 
+    /**
+     * NEW:
+     * Get message using language resolved for sender.
+     */
+    fun get(sender: Any, message: BaseMessage): String {
+        val lang = resolve(sender)
+        return getEntry(message, lang).value
+    }
+
+    /**
+     * Fetch correct entry with proper fallback logic.
+     */
     fun getEntry(message: BaseMessage, language: McLanguage = defaultLanguage): LanguageEntry {
         val lang = language.code
 
+        // Exact language entry found?
         cache[lang]?.get(message.key)?.let { return it }
+
+        // Fallback to default language
         cache[defaultLanguage.code]?.get(message.key)?.let { return it }
 
+        // No DB entry -> return default definition
         return LanguageEntry(
             language = language,
             key = message.key,
@@ -185,6 +230,9 @@ open class LanguageService(
         )
     }
 
+    /**
+     * Apply placeholder {key} → value replacement.
+     */
     fun format(message: String, vararg placeholders: Pair<String, String>): String {
         var msg = message
         placeholders.forEach { (k, v) ->

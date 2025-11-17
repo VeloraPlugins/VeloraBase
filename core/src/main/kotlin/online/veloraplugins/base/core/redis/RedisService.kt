@@ -31,6 +31,7 @@ class RedisService(
         setupPubSub()
 
         log("Connected to Redis → ${config.host}:${config.port}/${config.database}")
+        super.onEnable()
     }
 
     override suspend fun onDisable() {

@@ -1,8 +1,9 @@
-package online.veloraplugins.paper.example.language
+package online.veloraplugins.base.paper.services
 
 import com.cryptomorin.xseries.XSound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
+import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.database.dao.language.LanguageEntry
 import online.veloraplugins.base.core.language.BaseMessage
@@ -24,17 +25,22 @@ class PaperLanguageService(
         return componentFromString(text)
     }
 
+    /**
+     * Send a translated message to a CommandSender.
+     * Automatically resolves the language using LanguageService.resolve(sender)
+     */
     fun send(sender: CommandSender, message: BaseMessage, vararg placeholders: Pair<String, String>) {
-        val entry = getEntry(message)
+        val lang = resolve(sender)
+        val entry = getEntry(message, lang)
         sendByType(sender, entry, *placeholders)
         playSound(sender, entry)
     }
 
     private fun sendByType(sender: CommandSender, entry: LanguageEntry, vararg placeholders: Pair<String, String>) {
         when (entry.type) {
-            MessageType.CHAT      -> sendChat(sender, entry, *placeholders)
+            MessageType.CHAT       -> sendChat(sender, entry, *placeholders)
             MessageType.ACTION_BAR -> sendActionBar(sender, entry, *placeholders)
-            MessageType.TITLE     -> sendTitle(sender, entry, *placeholders)
+            MessageType.TITLE      -> sendTitle(sender, entry, *placeholders)
         }
     }
 
@@ -57,7 +63,7 @@ class PaperLanguageService(
         }
 
         val formatted = format(entry.value, *placeholders)
-        val parts = formatted.split("\\|", limit = 2)
+        val parts = formatted.split("|", limit = 2)
 
         val title = componentFromString(parts.getOrNull(0) ?: "")
         val subtitle = componentFromString(parts.getOrNull(1) ?: "")
@@ -77,5 +83,4 @@ class PaperLanguageService(
 
         optional.get().play(sender)
     }
-
 }

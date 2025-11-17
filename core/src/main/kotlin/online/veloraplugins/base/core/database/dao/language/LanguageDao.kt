@@ -7,7 +7,11 @@ import org.jetbrains.exposed.sql.*
 
 class LanguageDao(
     db: DatabaseService
-) : BaseDao<LanguageTable>(db, LanguageTable) {
+) : BaseDao<LanguageTable>(db) {
+
+    override fun table(): LanguageTable {
+        return LanguageTable
+    }
 
     suspend fun get(language: String, key: String): LanguageEntry? =
         findOne {

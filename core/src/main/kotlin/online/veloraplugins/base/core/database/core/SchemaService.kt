@@ -4,13 +4,11 @@ import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.database.dao.BaseDao
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
 class SchemaService(
-    private val app: BasePlugin,
+    private val app: BasePlugin
 ) : AbstractService(app) {
 
     override val dependsOn: Set<KClass<out Service>> =
@@ -19,45 +17,57 @@ class SchemaService(
     /** Cache: DAO class → DAO instance */
     private val daoCache = mutableMapOf<KClass<out BaseDao<*>>, BaseDao<*>>()
 
-    fun getDatabase(): DatabaseService =
-        app.serviceManager.require(DatabaseService::class)
-
     /**
-     * Returns or instantiates the DAO for the given class.
-     * Automatically creates missing tables.
+     * Registers a DAO instance using reflection.
+     *
+     * BaseDao.init() (schema creation) happens later in onEnable().
      */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : BaseDao<*>> getSchema(clazz: KClass<T>): T {
-        // Already exists in cache
-        daoCache[clazz]?.let { return it as T }
+    fun <T : BaseDao<*>> register(clazz: KClass<T>): T {
+        val db = app.serviceManager.require(DatabaseService::class)
 
-        val db = getDatabase()
-
-        // Instantiate DAO
         val ctor = clazz.primaryConstructor
             ?: error("${clazz.simpleName} must have a primary constructor(DatabaseService)")
 
+        app.debug("[SchemaService] Creating DAO instance for ${clazz.simpleName}")
+
         val instance = ctor.call(db)
 
-        // Create/update table schema
-        transaction(db.db) {
-            SchemaUtils.createMissingTablesAndColumns(instance.table)
-        }
-
-        // Cache it
         daoCache[clazz] = instance
+
+        app.debug("[SchemaService] Registered DAO ${clazz.simpleName}")
+
         return instance
     }
 
     /**
-     * registerSchema: alias for getSchema but returns Unit
-     *
-     * This is mainly for plugin load-time registration,
-     * where you want a single clean call like:
-     *
-     *     schema.registerSchema(UserDao::class)
+     * Retrieve a previously registered DAO.
      */
-    fun registerSchema(clazz: KClass<out BaseDao<*>>) {
-        getSchema(clazz)
+    @Suppress("UNCHECKED_CAST")
+    fun <T : BaseDao<*>> get(type: KClass<T>): T =
+        daoCache[type] as? T
+            ?: error("DAO ${type.simpleName} is not registered")
+
+    inline fun <reified T : BaseDao<*>> get(): T =
+        get(T::class)
+
+    /**
+     * Called during plugin enable.
+     *
+     * Runs BaseDao.init() for all DAOs — which creates or updates schema.
+     */
+    override suspend fun onEnable() {
+        app.debug("[SchemaService] Initializing all registered DAOs...")
+
+        for (dao in daoCache.values) {
+            try {
+                app.debug("[SchemaService] Initializing DAO ${dao::class.simpleName}")
+                dao.init()
+                app.debug("[SchemaService] Initialized DAO ${dao::class.simpleName}")
+            } catch (e: Exception) {
+                app.logger.severe("Failed to initialize DAO ${dao::class.simpleName}: ${e.message}")
+            }
+        }
+
+        super.onEnable()
     }
 }

@@ -21,17 +21,18 @@ class MyPlugin : PaperBasePlugin() {
     override fun onLoad() {
         super.onLoad()
 
-        base.serviceManager.registerInstance(DatabaseService(base))
-        base.serviceManager.registerInstance(SchemaService(base))
+        base.serviceManager.register(DatabaseService(base))
+        base.serviceManager.register(SchemaService(base))
 
-        base.serviceManager.registerInstance(RedisService(base))
-        base.serviceManager.registerInstance(RedisEventService(base))
+        base.serviceManager.register(RedisService(base))
+        base.serviceManager.register(RedisEventService(base))
 
-        base.serviceManager.registerInstance(MaterialsCacheService(this))
-        base.serviceManager.registerInstance(PlaceholderAPIService(this, "baseplugin"))
+        base.serviceManager.register(MaterialsCacheService(this))
+        base.serviceManager.register(PlaceholderAPIService(this, "baseplugin"))
 
-        base.serviceManager.registerInstance(LanguageService(base))
-        base.serviceManager.registerInstance(ExampleService(base))
+        base.serviceManager.register(LanguageService(base))
+        base.serviceManager.register(ExampleService(base))
+
     }
 
     override fun onEnable() {
@@ -47,7 +48,7 @@ class MyPlugin : PaperBasePlugin() {
     private fun loadTestUserDao() {
         // Prepare DAO
         val schema = base.serviceManager.require(SchemaService::class)
-        schema.registerSchema(BasicUserDao::class)
+        schema.register(BasicUserDao::class)
     }
 
     private fun loadLanguages() {
