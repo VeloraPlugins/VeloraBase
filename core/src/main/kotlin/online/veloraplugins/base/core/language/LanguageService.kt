@@ -52,7 +52,7 @@ open class LanguageService(
     /** Platform-specific language resolver (Bukkit/Velocity/etc) */
     private var languageResolver: ((Any) -> McLanguage?)? = null
 
-    override suspend fun onEnable() {
+    override suspend fun onLoad() {
         val schemaService = app.serviceManager.require(SchemaService::class)
         dao = schemaService.register(LanguageDao::class)
         super.onEnable()
