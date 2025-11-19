@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.paper.config.PaperConfigService
+import online.veloraplugins.base.paper.services.command.PaperCommandService
 import org.bukkit.plugin.java.JavaPlugin
 
 abstract class PaperBasePlugin : JavaPlugin() {
@@ -27,6 +28,7 @@ abstract class PaperBasePlugin : JavaPlugin() {
     override fun onLoad() {
         this.base.initialize()
         this.base.onLoad()
+        this.base.serviceManager.register(PaperCommandService(this))
         super.onLoad()
     }
 

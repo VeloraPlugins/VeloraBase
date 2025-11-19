@@ -25,4 +25,9 @@ dependencies {
     // MCCoroutine (Paper)
     compileOnly("com.github.shynixn.mccoroutine:mccoroutine-bukkit-api:2.22.0")
     implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-core:2.22.0")
+
+    implementation("org.incendo:cloud-core:2.0.0-beta.10")
+    implementation("org.incendo:cloud-annotations:2.0.0")
+    implementation("org.incendo:cloud-minecraft-extras:2.0.0-beta.10")
+    implementation("org.incendo:cloud-paper:2.0.0-beta.10")
 }
