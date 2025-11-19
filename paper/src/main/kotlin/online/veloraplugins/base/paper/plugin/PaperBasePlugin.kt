@@ -6,6 +6,7 @@ import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.paper.config.PaperConfigService
 import online.veloraplugins.base.paper.services.command.PaperCommandService
+import online.veloraplugins.mccommon.ComponentUtil
 import org.bukkit.plugin.java.JavaPlugin
 
 abstract class PaperBasePlugin : JavaPlugin() {
@@ -14,6 +15,10 @@ abstract class PaperBasePlugin : JavaPlugin() {
 
         override val platformScope: CoroutineScope by lazy {
             this@PaperBasePlugin.scope
+        }
+
+        override fun info(message: String) {
+            componentLogger.info(ComponentUtil.parse(message))
         }
 
         override fun createConfigService(): AbstractConfigService =

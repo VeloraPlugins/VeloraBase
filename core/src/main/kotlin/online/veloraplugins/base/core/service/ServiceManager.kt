@@ -7,6 +7,36 @@ class ServiceManager(
     private val app: BasePlugin
 ) {
 
+    companion object {
+        @Volatile
+        var instance: ServiceManager? = null
+
+        /**
+         * Called once by BasePlugin during initialization.
+         */
+        fun init(manager: ServiceManager) {
+            instance = manager
+        }
+
+        /**
+         * Get a service or null.
+         */
+        inline fun <reified S : Service> get(): S? =
+            instance?.get(S::class)
+
+        /**
+         * Get a service or throw.
+         */
+        inline fun <reified S : Service> require(): S =
+            instance?.require(S::class)
+                ?: error("ServiceManager not initialized!")
+
+        /**
+         * Check if initialized.
+         */
+        fun isInitialized(): Boolean = instance != null
+    }
+
     private val services = LinkedHashMap<KClass<out Service>, Service>()
 
     fun <S : Service> register(service: S): S {
@@ -28,10 +58,6 @@ class ServiceManager(
     inline fun <reified S : Service> get(): S? = get(S::class)
     inline fun <reified S : Service> require(): S = require(S::class)
 
-    /**
-     * Loads all services.
-     * Each service loads AFTER its dependencies.
-     */
     suspend fun load() {
         for (service in services.values) {
             try {
@@ -42,9 +68,6 @@ class ServiceManager(
         }
     }
 
-    /**
-     * Ensures dependencies are loaded before this service.
-     */
     private suspend fun loadOnDepends(service: Service) {
         for (dep in service.dependsOn) {
             val dependency = services[dep]

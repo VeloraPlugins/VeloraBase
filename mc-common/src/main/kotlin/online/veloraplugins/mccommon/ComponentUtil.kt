@@ -60,13 +60,12 @@ object ComponentUtil {
     }
 
     /**
-     * Fully normalizes any string input into a Component.
-     * Automatically detects if the string contains MiniMessage or legacy codes.
+     * Fully normalizes any input by processing both legacy (&c)
+     * and MiniMessage (<red>) formatting.
      */
     fun parse(input: String): Component {
-        return when {
-            input.contains('<') && input.contains('>') -> fromMini(input)
-            else -> fromLegacy(input)
-        }
+        val legacyComponent = legacySerializer.deserialize(input)
+        val miniString = mini.serialize(legacyComponent)
+        return mini.deserialize(miniString)
     }
 }

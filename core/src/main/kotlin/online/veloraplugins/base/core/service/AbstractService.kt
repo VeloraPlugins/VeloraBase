@@ -67,6 +67,11 @@ abstract class AbstractService(
 
     // Logging
     protected fun log(msg: String) {
+        app.info("[Service:${key.simpleName}] $msg")
+    }
+
+    // Logging
+    protected fun debug(msg: String) {
         app.debug("[Service:${key.simpleName}] $msg")
     }
 }

@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.core.configuration.BaseConfig
 import online.veloraplugins.base.core.scheduler.SchedulerService
+import online.veloraplugins.base.core.service.Service
 import online.veloraplugins.base.core.service.ServiceManager
 import java.io.File
 import java.util.logging.Logger
@@ -106,6 +107,7 @@ abstract class BasePlugin {
      */
     private fun initServices() {
         serviceManager = ServiceManager(this)
+        ServiceManager.init(ServiceManager(this))
         configService = createConfigService()
     }
 
@@ -171,6 +173,11 @@ abstract class BasePlugin {
             logger.info("[DEBUG] " + message.format(*args))
         }
     }
+
+    /**
+     * logging helper.
+     */
+    abstract fun info(message: String)
 
     /**
      * Returns true if debugging is enabled in base-settings.yml.
