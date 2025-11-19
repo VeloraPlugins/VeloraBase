@@ -57,14 +57,17 @@ class ServiceManager(
 
         if (!service.isLoaded) {
             service.load()
+            app.logger.info("The service ${service.name} has been loaded! Depends on: ${service.dependsOn}")
         }
     }
 
     suspend fun enable() {
         for (service in services.values) {
             try {
-                if (!service.isEnabled)
+                if (!service.isEnabled) {
                     service.enable()
+                    app.logger.info("The service ${service.name} has been enabled!")
+                }
             } catch (e: Exception) {
                 app.logger.severe("Failed to enable service ${service.name}: ${e.message}")
             }
@@ -74,8 +77,10 @@ class ServiceManager(
     suspend fun disable() {
         for (service in services.values.reversed()) {
             try {
-                if (service.isEnabled)
+                if (service.isEnabled) {
                     service.disable()
+                    app.logger.info("The service ${service.name} has been disabled!")
+                }
             } catch (e: Exception) {
                 app.logger.severe("Failed to disable service ${service.name}: ${e.message}")
             }

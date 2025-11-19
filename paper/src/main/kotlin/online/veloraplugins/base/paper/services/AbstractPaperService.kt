@@ -1,5 +1,6 @@
 package online.veloraplugins.base.paper.services
 
+import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import org.bukkit.Bukkit
@@ -42,10 +43,8 @@ abstract class AbstractPaperService(
      * @param autoRegisterSelf Whether this service should automatically register itself
      * as a Bukkit event listener. Default is `true`.
      */
-    open suspend fun onEnable(autoRegisterSelf: Boolean = true) {
-        if (autoRegisterSelf) {
-            registerSelf()
-        }
+    override suspend fun onEnable() {
+        registerSelf()
     }
 
     /**
@@ -55,7 +54,7 @@ abstract class AbstractPaperService(
      */
     protected fun registerListener(listener: Listener) {
         listeners += listener
-        Bukkit.getPluginManager().registerEvents(listener, app)
+        Bukkit.getPluginManager().registerSuspendingEvents(listener, app)
     }
 
     /**
@@ -71,6 +70,7 @@ abstract class AbstractPaperService(
      * Registers this service instance as a listener.
      */
     protected fun registerSelf() {
+        app.base().debug("Registered ${this.name} as bukkit Listener!")
         registerListener(this)
     }
 }
