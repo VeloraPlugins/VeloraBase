@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.database.core.SchemaService
 import online.veloraplugins.base.core.database.dao.language.LanguageEntry
 import online.veloraplugins.base.core.language.BaseMessage
 import online.veloraplugins.base.core.language.LanguageService
@@ -14,8 +15,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 class PaperLanguageService(
-    private val plugin: BasePlugin
-) : LanguageService(plugin) {
+    override val plugin: BasePlugin) : LanguageService(plugin) {
 
     private fun componentFromString(input: String): Component =
         ComponentUtil.parse(input)

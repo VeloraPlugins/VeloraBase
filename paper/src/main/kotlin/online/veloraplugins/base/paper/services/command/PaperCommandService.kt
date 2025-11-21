@@ -1,7 +1,9 @@
 package online.veloraplugins.base.paper.services.command
 
+import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.service.ServiceInfo
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
-import online.veloraplugins.base.paper.services.AbstractPaperService
+import online.veloraplugins.base.paper.services.PaperService
 import org.bukkit.command.CommandSender
 import org.incendo.cloud.Command
 import org.incendo.cloud.SenderMapper
@@ -22,9 +24,10 @@ import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.minecraft.extras.ImmutableMinecraftHelp
 import org.incendo.cloud.parser.ArgumentParser
 
+@ServiceInfo("Cloud Commands")
 class PaperCommandService(
-    private val plugin: PaperBasePlugin
-) : AbstractPaperService(plugin) {
+    private val paperPlugin: PaperBasePlugin
+) : PaperService(paperPlugin) {
 
     private lateinit var manager: LegacyPaperCommandManager<CommandSender>
     private lateinit var parser: AnnotationParser<CommandSender>
@@ -40,7 +43,7 @@ class PaperCommandService(
 
     private fun setupManager() {
         this.manager = LegacyPaperCommandManager(
-            plugin,
+            paperPlugin,
             ExecutionCoordinator.asyncCoordinator(),
             SenderMapper.identity()
         )
@@ -197,7 +200,7 @@ class PaperCommandService(
 
 
     private fun setupHelp() {
-        val baseCommand = plugin.pluginMeta.name
+        val baseCommand = paperPlugin.pluginMeta.name
 
         this.help = ImmutableMinecraftHelp.builder<CommandSender>()
             .commandManager(manager)

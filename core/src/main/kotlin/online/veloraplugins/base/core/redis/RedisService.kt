@@ -10,7 +10,8 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.RedisConfig
-import online.veloraplugins.base.core.service.AbstractService
+import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 
 /**
  * RedisService (Velora Base)
@@ -20,9 +21,10 @@ import online.veloraplugins.base.core.service.AbstractService
  * - Hash, Set, String helpers
  * - SCAN (sync & async)
  */
+@ServiceInfo("Redis")
 class RedisService(
     private val app: BasePlugin,
-) : AbstractService(app) {
+) : Service(app) {
 
     private val config: RedisConfig = app.pluginConfig.redis
 
@@ -34,7 +36,7 @@ class RedisService(
 
     private val channelListeners = mutableMapOf<String, MutableList<(String) -> Unit>>()
 
-    override suspend fun onLoad() {
+    override fun onInitialize() {
         if (!config.enabled) {
             log("Redis disabled in config.")
             return

@@ -2,17 +2,16 @@ package online.veloraplugins.base.core.database.core
 
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.database.dao.BaseDao
-import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
+@ServiceInfo("Schema")
 class SchemaService(
-    private val app: BasePlugin
-) : AbstractService(app) {
-
-    override val dependsOn: Set<KClass<out Service>> =
-        setOf(DatabaseService::class)
+    private val app: BasePlugin,
+    private val databaseService: DatabaseService
+) : Service(app) {
 
     /** Cache: DAO class → DAO instance */
     private val daoCache = mutableMapOf<KClass<out BaseDao<*>>, BaseDao<*>>()
@@ -23,14 +22,13 @@ class SchemaService(
      * BaseDao.init() (schema creation) happens later in onEnable().
      */
     fun <T : BaseDao<*>> register(clazz: KClass<T>): T {
-        val db = app.serviceManager.require(DatabaseService::class)
 
         val ctor = clazz.primaryConstructor
             ?: error("${clazz.simpleName} must have a primary constructor(DatabaseService)")
 
         app.debug("[SchemaService] Creating DAO instance for ${clazz.simpleName}")
 
-        val instance = ctor.call(db)
+        val instance = ctor.call(databaseService)
 
         daoCache[clazz] = instance
 

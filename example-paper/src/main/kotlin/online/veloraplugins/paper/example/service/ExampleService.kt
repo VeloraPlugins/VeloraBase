@@ -5,8 +5,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import online.veloraplugins.base.core.BasePlugin
-import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 import kotlin.reflect.KClass
 
 /**
@@ -18,13 +18,10 @@ import kotlin.reflect.KClass
  * - Shows how dependencies can be defined
  * - Cleans up jobs when disabled
  */
+@ServiceInfo("Example")
 class ExampleService(
     private val app: BasePlugin
-) : AbstractService(app) {
-
-    /** Example of declaring service dependencies */
-    override val dependsOn: Set<KClass<out Service>> =
-        emptySet() // Example: setOf(DatabaseService::class)
+) : Service(app) {
 
     private var repeatingJob: Job? = null
 

@@ -5,7 +5,6 @@ import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.core.configuration.BaseConfig
 import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.core.service.Service
-import online.veloraplugins.base.core.service.ServiceManager
 import java.io.File
 import java.util.logging.Logger
 
@@ -30,17 +29,7 @@ abstract class BasePlugin {
      * Lazy-loaded so it becomes available only after initialize() has
      * registered the SchedulerService instance.
      */
-    val scheduler: SchedulerService by lazy {
-        serviceManager.require<SchedulerService>()
-    }
-
-    /**
-     * Central service registry and lifecycle controller.
-     *
-     * All services must be registered before onEnable().
-     */
-    lateinit var serviceManager: ServiceManager
-        private set
+    lateinit var scheduler: SchedulerService
 
     /**
      * Responsible for loading and binding Okaeri config files.
@@ -77,6 +66,7 @@ abstract class BasePlugin {
         platformScope ?: CoroutineScope(SupervisorJob() + Dispatchers.Default)
     }
 
+
     /**
      * Initializes the VeloraBase core before the platform fully loads.
      *
@@ -88,10 +78,8 @@ abstract class BasePlugin {
      * - Registration of core services (SchedulerService)
      */
     fun initialize() {
+        scheduler = SchedulerService(this)
         initDataFolder()
-        initServices()
-        initBaseConfig()
-        registerCoreServices()
     }
 
     /**
@@ -99,16 +87,8 @@ abstract class BasePlugin {
      */
     private fun initDataFolder() {
         if (!dataFolder.exists()) dataFolder.mkdirs()
-    }
-
-    /**
-     * Creates ServiceManager and configuration service.
-     * ConfigService implementation is provided per platform.
-     */
-    private fun initServices() {
-        serviceManager = ServiceManager(this)
-        ServiceManager.init(ServiceManager(this))
         configService = createConfigService()
+        initBaseConfig()
     }
 
     /**
@@ -116,14 +96,6 @@ abstract class BasePlugin {
      */
     private fun initBaseConfig() {
         pluginConfig = configService.create(BaseConfig::class, "base-settings.yml")
-    }
-
-    /**
-     * Registers core VeloraBase services required on every platform.
-     * SchedulerService is always required by the infrastructure.
-     */
-    private fun registerCoreServices() {
-        serviceManager.register(SchedulerService(this))
     }
 
     /**
@@ -135,6 +107,10 @@ abstract class BasePlugin {
      */
     open fun onLoad() {
         logger.info("Loading BasePlugin...")
+
+        for (service in Service.all()) {
+            runBlocking { service.onLoad() }
+        }
     }
 
     /**
@@ -145,10 +121,8 @@ abstract class BasePlugin {
      */
     open fun onEnable() {
         logger.info("Enabling BasePlugin...")
-
-        runBlocking {
-            serviceManager.load()
-            serviceManager.enable()
+        for (service in Service.all()) {
+            runBlocking { service.onEnable() }
         }
     }
 
@@ -157,11 +131,9 @@ abstract class BasePlugin {
      */
     open fun onDisable() {
         logger.info("Disabling BasePlugin...")
-
-        runBlocking {
-            serviceManager.disable()
+        for (service in Service.all()) {
+            runBlocking { service.onDisable() }
         }
-
         scope.cancel()
     }
 

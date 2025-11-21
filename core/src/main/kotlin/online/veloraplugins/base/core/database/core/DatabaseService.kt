@@ -3,10 +3,12 @@ package online.veloraplugins.base.core.database.core
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.MySQLConfig
-import online.veloraplugins.base.core.service.AbstractService
+import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
@@ -14,9 +16,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.sql.Connection
 
+@ServiceInfo("Database")
 class DatabaseService(
     private val app: BasePlugin,
-) : AbstractService(app) {
+) : Service(app) {
 
     private val config: MySQLConfig = app.pluginConfig.mysql
 
@@ -24,16 +27,21 @@ class DatabaseService(
     lateinit var db: Database
         private set
 
-    override suspend fun onInit() {
+    lateinit var schemas: SchemaService
+
+    override fun onInitialize() {
+        super.onInitialize()
         if (config.useSQLite) {
             connectSQLite()
             log("SQLite connected → ${config.sqliteFile}")
         } else {
             setupPool()
             connectExposed()
-            testConnection()
+            runBlocking { testConnection() }
             log("MySQL connected → ${config.host}:${config.database}")
         }
+
+        schemas = SchemaService(app, this)
     }
 
     override suspend fun onDisable() {

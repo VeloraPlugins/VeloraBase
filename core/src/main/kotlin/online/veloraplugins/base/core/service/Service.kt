@@ -1,55 +1,117 @@
 package online.veloraplugins.base.core.service
 
+import online.veloraplugins.base.core.BasePlugin
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
- * The base interface for all services managed by the plugin's [ServiceManager].
- *
- * A service represents a modular, self-contained unit of functionality
- * that can be loaded, enabled, and disabled independently.
- *
- * Lifecycle (all asynchronous):
- * - load()    → construct heavy objects (database, caches, configs)
- * - enable()  → activate listeners, commands, schedulers
- * - disable() → clean up resources
- *
- * Services should normally extend [AbstractService], which implements
- * all lifecycle state tracking automatically.
+ * Base class for modular backend services.
+ * Mirrors the design of CMS Module system (auto-init, registry, lifecycle).
  */
-interface Service {
+abstract class Service(
+    open val plugin: BasePlugin
+) {
 
-    /** Unique identifier for this service type. */
-    val key: KClass<out Service>
+    private lateinit var serviceInfo: ServiceInfo
+    private lateinit var loggerName: String
 
-    /** Human-readable service name. */
+    var loaded: Boolean = false
+        private set
+
+    var enabled: Boolean = false
+        private set
+
+    init {
+        if (!javaClass.isAnnotationPresent(ServiceInfo::class.java)) {
+            throw RuntimeException("Missing @ServiceInfo annotation in ${javaClass.name}")
+        }
+
+        initialize()
+    }
+
+    /** Reads annotation, registers service, calls onInitialize(). */
+    private fun initialize() {
+        val start = System.currentTimeMillis()
+
+        this.serviceInfo = javaClass.getAnnotation(ServiceInfo::class.java)
+        this.loggerName = "Service:${serviceInfo.name}"
+
+        log("Initializing service...")
+
+        // auto-register in global map
+        registerService(this)
+
+        onInitialize()
+
+        enabled = true
+        log("Service initialized in ${System.currentTimeMillis() - start}ms [v${serviceInfo.version}]")
+    }
+
+    /** Runs IMMEDIATELY after constructor (same as Module). */
+    protected open fun onInitialize() {}
+
+    /** Called by plugin when loading. */
+    open suspend fun onLoad() {
+        loaded = true
+        log("${name} loaded")
+    }
+
+    /** Called by plugin when enabling. */
+    open suspend fun onEnable() {
+        enabled = true
+        log("${name} enabled")
+    }
+
+    /** Called by plugin when disabling. */
+    open suspend fun onDisable() {
+        enabled = false
+        log("${name} disabled")
+    }
+
+    /** Optional reload hook. */
+    open suspend fun onReload() {
+        log("${name} reloaded")
+    }
+
+    protected fun log(message: String) {
+        plugin.info("[$loggerName] $message")
+    }
+
+    protected fun debug(message: String) {
+        plugin.debug("[$loggerName] $message")
+    }
+
     val name: String
-        get() = key.simpleName ?: "Service"
+        get() = serviceInfo.name
 
-    /**
-     * Declares dependencies that must be loaded and enabled first.
-     */
-    val dependsOn: Set<KClass<out Service>>
-        get() = emptySet()
+    companion object {
+        /** Global registry of all services */
+        private val services = ConcurrentHashMap<KClass<out Service>, Service>()
 
-    /**
-     * Called once before enable(), used to prepare heavy resources.
-     */
-    suspend fun load() {}
+        /** Register service in global map */
+        fun registerService(service: Service) {
+            services[service::class] = service
+        }
 
-    /**
-     * Activates the service (register listeners, start schedulers).
-     */
-    suspend fun enable() {}
+        /** Get existing service */
+        @Suppress("UNCHECKED_CAST")
+        fun <T : Service> get(clazz: KClass<T>): T? =
+            services[clazz] as? T
 
-    /**
-     * Deactivates the service (cleanup, unregister listeners).
-     */
-    suspend fun disable() {}
+        /** Get existing service or throw if not found */
+        @Suppress("UNCHECKED_CAST")
+        fun <T : Service> getOrThrow(clazz: KClass<T>): T =
+            services[clazz] as? T
+                ?: error("Service ${clazz.simpleName} is not registered!")
 
-    /** Whether the service has been loaded. */
-    val isLoaded: Boolean
-        get() = false
 
-    /** Whether the service is active. */
-    val isEnabled: Boolean
+        /** Convenience generic getter */
+        inline fun <reified T : Service> get(): T =
+            get(T::class)
+                ?: error("Service '${T::class.simpleName}' not registered!")
+
+        fun all(): List<Service> {
+            return services.values.toList()
+        }
+    }
 }

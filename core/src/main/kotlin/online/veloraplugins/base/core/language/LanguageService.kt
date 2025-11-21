@@ -2,14 +2,11 @@ package online.veloraplugins.base.core.language
 
 import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.BasePlugin
-import online.veloraplugins.base.core.database.core.DatabaseService
 import online.veloraplugins.base.core.database.core.SchemaService
 import online.veloraplugins.base.core.database.dao.language.LanguageDao
 import online.veloraplugins.base.core.database.dao.language.LanguageEntry
-import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
-import org.jetbrains.exposed.sql.Database
-import kotlin.reflect.KClass
+import online.veloraplugins.base.core.service.ServiceInfo
 
 /**
  * LanguageService
@@ -22,12 +19,12 @@ import kotlin.reflect.KClass
  * - Cross-language fallback
  * - Per-sender language resolution
  */
+@ServiceInfo("Languages")
 open class LanguageService(
-    private val app: BasePlugin,
-) : AbstractService(app) {
+    private val app: BasePlugin
+) : Service(app) {
 
-    override val dependsOn: Set<KClass<out Service>> =
-        setOf(DatabaseService::class, SchemaService::class)
+    private val schemaService: SchemaService = getOrThrow(SchemaService::class)
 
     /** DAO for DB communication */
     private lateinit var dao: LanguageDao
@@ -53,9 +50,8 @@ open class LanguageService(
     private var languageResolver: ((Any) -> McLanguage?)? = null
 
     override suspend fun onLoad() {
-        val schemaService = app.serviceManager.require(SchemaService::class)
+        super.onLoad()
         dao = schemaService.register(LanguageDao::class)
-        super.onEnable()
     }
 
     /**

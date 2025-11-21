@@ -2,7 +2,6 @@ package online.veloraplugins.paper.example
 
 import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.database.core.DatabaseService
-import online.veloraplugins.base.core.database.core.SchemaService
 import online.veloraplugins.base.core.database.dao.language.LanguageDao
 import online.veloraplugins.base.core.database.dao.user.BasicUserDao
 import online.veloraplugins.base.core.language.LanguageService
@@ -21,44 +20,31 @@ class MyPlugin : PaperBasePlugin() {
     override fun onLoad() {
         super.onLoad()
 
-        base.serviceManager.register(DatabaseService(base))
-        base.serviceManager.register(SchemaService(base))
+        val databaseService = DatabaseService(base)
 
-        base.serviceManager.register(RedisService(base))
-        base.serviceManager.register(RedisEventService(base))
+        databaseService.schemas.register(BasicUserDao::class)
+        databaseService.schemas.register(LanguageDao::class)
 
-        base.serviceManager.register(MaterialsCacheService(this))
-        base.serviceManager.register(PlaceholderAPIService(this, "baseplugin"))
+        val redisService = RedisService(base)
 
-        base.serviceManager.register(LanguageService(base))
-        base.serviceManager.register(ExampleService(base))
+        RedisEventService(base, redisService)
 
+        MaterialsCacheService(this)
+
+        val placeholderAPIService = PlaceholderAPIService(this, "baseplugin")
+        placeholderAPIService.register("test") {
+                player -> "I am working ${player.name}"
+        }
+
+        val languageService = LanguageService(base)
+        languageService.registerEnum(McLanguage.EN_US, ExampleMessage::class.java)
+        languageService.registerEnum(McLanguage.NL_NL, ExampleMessage::class.java)
+        languageService.reloadAll()
+
+        ExampleService(base)
     }
 
     override fun onEnable() {
         super.onEnable()
-
-        loadTestUserDao()
-        loadLanguages()
-
-        val papi = base.serviceManager.require(PlaceholderAPIService::class)
-        papi.register("test") { player -> "I am working ${player.name}" }
     }
-
-    private fun loadTestUserDao() {
-        // Prepare DAO
-        val schema = base.serviceManager.require(SchemaService::class)
-        schema.register(BasicUserDao::class)
-    }
-
-    private fun loadLanguages() {
-        val languageService = base.serviceManager.require(LanguageService::class)
-
-        languageService.registerEnum(McLanguage.EN_US, ExampleMessage::class.java)
-        languageService.registerEnum(McLanguage.NL_NL, ExampleMessage::class.java)
-
-        languageService.reloadAll()
-    }
-
-
 }

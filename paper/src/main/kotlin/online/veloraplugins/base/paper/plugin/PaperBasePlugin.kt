@@ -11,6 +11,8 @@ import org.bukkit.plugin.java.JavaPlugin
 
 abstract class PaperBasePlugin : JavaPlugin() {
 
+    lateinit var paperCommandService: PaperCommandService
+
     private val base = object : BasePlugin() {
 
         override val platformScope: CoroutineScope by lazy {
@@ -33,7 +35,7 @@ abstract class PaperBasePlugin : JavaPlugin() {
     override fun onLoad() {
         this.base.initialize()
         this.base.onLoad()
-        this.base.serviceManager.register(PaperCommandService(this))
+        paperCommandService = PaperCommandService(this)
         super.onLoad()
     }
 

@@ -2,24 +2,23 @@ package online.veloraplugins.base.paper.services
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import online.veloraplugins.base.core.scheduler.SchedulerService
-import online.veloraplugins.base.core.service.AbstractService
 import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
+@ServiceInfo("PlaceholderAPI")
 class PlaceholderAPIService(
     private val app: PaperBasePlugin,
     private val namespace: String
-) : AbstractService(app.base()) {
+) : Service(app.base()) {
 
     private val placeholders = ConcurrentHashMap<String, suspend (Player) -> String>()
 
     private var expansion: Expansion? = null
-
-    override val dependsOn = setOf<KClass<out Service>>(SchedulerService::class)
 
     override suspend fun onEnable() {
         Bukkit.getScheduler().runTask(app, Runnable {

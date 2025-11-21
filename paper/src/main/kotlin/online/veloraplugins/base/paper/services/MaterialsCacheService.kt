@@ -1,12 +1,10 @@
 package online.veloraplugins.base.paper.services
 
-import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import org.bukkit.Material
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
-import kotlin.reflect.KClass
 
 /**
  * MaterialsCacheService
@@ -58,12 +56,10 @@ import kotlin.reflect.KClass
  * that require the main thread are used, so this is fully async-safe.
  *
  */
+@ServiceInfo("Material Cache")
 class MaterialsCacheService(
     app: PaperBasePlugin
-) : AbstractPaperService(app) {
-
-    override val dependsOn: Set<KClass<out Service>> = emptySet()
-
+) : PaperService(app) {
 
     /** Immutable map of lowercase material names → Material */
     private lateinit var materialByName: Map<String, Material>
