@@ -20,6 +20,7 @@ import org.bukkit.entity.Player
 import org.incendo.cloud.bukkit.parser.*
 import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.minecraft.extras.ImmutableMinecraftHelp
+import org.incendo.cloud.parser.ArgumentParser
 
 class PaperCommandService(
     private val plugin: PaperBasePlugin
@@ -135,6 +136,17 @@ class PaperCommandService(
 
     }
 
+    /**
+     * Registers a parser under a named identifier for annotation usage.
+     */
+    fun <T> registerParser(
+        name: String,
+        supplier: () -> ArgumentParser<CommandSender, T>
+    ) {
+        manager.parserRegistry().registerNamedParserSupplier(name) {
+            supplier()
+        }
+    }
 
     private fun setupExceptionHandlers() {
         MinecraftExceptionHandler.createNative<CommandSender>()

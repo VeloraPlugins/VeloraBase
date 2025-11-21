@@ -24,7 +24,7 @@ class DatabaseService(
     lateinit var db: Database
         private set
 
-    override suspend fun onEnable() {
+    override suspend fun onInit() {
         if (config.useSQLite) {
             connectSQLite()
             log("SQLite connected → ${config.sqliteFile}")

@@ -1,5 +1,8 @@
 package online.veloraplugins.base.core.service
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import online.veloraplugins.base.core.BasePlugin
 import kotlin.reflect.KClass
 
@@ -16,6 +19,10 @@ import kotlin.reflect.KClass
 abstract class AbstractService(
     private val app: BasePlugin
 ) : Service {
+
+    init {
+        runBlocking { onInit() }
+    }
 
     /**
      * Unique key for this service.
@@ -61,6 +68,7 @@ abstract class AbstractService(
         log("disabled")
     }
 
+    protected open suspend fun onInit() {}
     protected open suspend fun onLoad() {}
     protected open suspend fun onEnable() {}
     protected open suspend fun onDisable() {}
