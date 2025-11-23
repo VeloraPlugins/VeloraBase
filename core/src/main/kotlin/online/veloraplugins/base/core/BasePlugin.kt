@@ -116,7 +116,6 @@ abstract class BasePlugin {
      */
     open fun onLoad() {
         logger.info("Loading BasePlugin...")
-        this.registerServices()
         this.serviceManager.loadAll()
     }
 
@@ -138,16 +137,6 @@ abstract class BasePlugin {
         logger.info("Disabling BasePlugin...")
         scope.cancel()
         this.serviceManager.disableAll()
-    }
-
-    /**
-     * Hook that platform plugins (PaperBasePlugin, VelocityBasePlugin, orOtherPlatform)
-     * must override to register ALL their services.
-     *
-     * Called during onLoad() BEFORE services are loaded.
-     */
-    open fun registerServices() {
-        // default: no services
     }
 
     /**

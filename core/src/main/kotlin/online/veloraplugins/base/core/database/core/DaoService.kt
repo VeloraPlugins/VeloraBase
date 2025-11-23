@@ -18,7 +18,7 @@ import kotlin.reflect.full.primaryConstructor
  */
 @ServiceInfo(
     name = "DAOs",
-    order = LoadOrder.HIGHEST,
+    order = LoadOrder.LOW,
     dependsOn = [DatabaseService::class]
 )
 class DaoService(
@@ -49,6 +49,7 @@ class DaoService(
         val dao = ctor.call(database)
 
         daoCache[type] = dao
+        plugin.scope.launch { dao.init() }
 
         plugin.debug("[DaoService] Registered DAO ${type.simpleName}")
 
@@ -62,15 +63,4 @@ class DaoService(
             ?: error("DAO ${type.simpleName} is not registered!")
 
     inline fun <reified T : BaseDao<*>> get(): T = get(T::class)
-
-    override suspend fun onEnable() {
-        plugin.debug("[DaoService] Initializing all DAOs...")
-
-        daoCache.values.forEach { dao ->
-            plugin.debug("Initializing dao = ${dao.javaClass.simpleName}")
-            dao.init()
-        }
-
-        super.onEnable()
-    }
 }
