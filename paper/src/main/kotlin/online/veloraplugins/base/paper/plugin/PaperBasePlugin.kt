@@ -31,18 +31,17 @@ abstract class PaperBasePlugin : JavaPlugin() {
         override val pluginVersion get() = this@PaperBasePlugin.description.version
     }
 
-
     override fun onLoad() {
+        super.onLoad()
         this.base.initialize()
         this.base.onLoad()
         paperCommandService = PaperCommandService(this)
-        super.onLoad()
     }
 
 
     override fun onEnable() {
-        this.base.onEnable()
         super.onEnable()
+        this.base.onEnable()
     }
 
     override fun onDisable() {

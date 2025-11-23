@@ -3,9 +3,7 @@ package online.veloraplugins.base.paper.services
 import com.cryptomorin.xseries.XSound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
-import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.BasePlugin
-import online.veloraplugins.base.core.database.core.SchemaService
 import online.veloraplugins.base.core.database.dao.language.LanguageEntry
 import online.veloraplugins.base.core.language.BaseMessage
 import online.veloraplugins.base.core.language.LanguageService

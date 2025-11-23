@@ -2,6 +2,7 @@ package online.veloraplugins.base.core.scheduler
 
 import kotlinx.coroutines.*
 import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.service.LoadOrder
 import online.veloraplugins.base.core.service.Service
 import online.veloraplugins.base.core.service.ServiceInfo
 import java.util.concurrent.TimeUnit
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit
  * to define its threading model (Paper: MCCoroutine scope,
  * Velocity: default coroutine scope, etc.)
  */
-@ServiceInfo("Scheduler")
+@ServiceInfo("Scheduler", order = LoadOrder.LOWEST)
 class SchedulerService(
     override val plugin: BasePlugin
 ) : Service(plugin) {

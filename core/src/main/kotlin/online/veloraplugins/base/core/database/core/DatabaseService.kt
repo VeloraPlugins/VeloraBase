@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.MySQLConfig
+import online.veloraplugins.base.core.service.LoadOrder
 import online.veloraplugins.base.core.service.Service
 import online.veloraplugins.base.core.service.ServiceInfo
 import org.jetbrains.exposed.sql.Database
@@ -16,7 +17,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.sql.Connection
 
-@ServiceInfo("Database")
+@ServiceInfo("Database", order = LoadOrder.LOWEST)
 class DatabaseService(
     private val app: BasePlugin,
 ) : Service(app) {
@@ -26,8 +27,6 @@ class DatabaseService(
     private var hikari: HikariDataSource? = null
     lateinit var db: Database
         private set
-
-    lateinit var schemas: SchemaService
 
     override fun onInitialize() {
         super.onInitialize()
@@ -40,8 +39,10 @@ class DatabaseService(
             runBlocking { testConnection() }
             log("MySQL connected → ${config.host}:${config.database}")
         }
+    }
 
-        schemas = SchemaService(app, this)
+    override suspend fun onLoad() {
+        super.onLoad()
     }
 
     override suspend fun onDisable() {

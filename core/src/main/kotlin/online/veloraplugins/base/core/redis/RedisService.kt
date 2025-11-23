@@ -10,6 +10,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import online.veloraplugins.base.core.BasePlugin
 import online.veloraplugins.base.core.configuration.RedisConfig
+import online.veloraplugins.base.core.service.LoadOrder
 import online.veloraplugins.base.core.service.Service
 import online.veloraplugins.base.core.service.ServiceInfo
 
@@ -21,7 +22,7 @@ import online.veloraplugins.base.core.service.ServiceInfo
  * - Hash, Set, String helpers
  * - SCAN (sync & async)
  */
-@ServiceInfo("Redis")
+@ServiceInfo("Redis", order = LoadOrder.LOWEST)
 class RedisService(
     private val app: BasePlugin,
 ) : Service(app) {
@@ -69,7 +70,6 @@ class RedisService(
             .build()
 
         client = RedisClient.create(uri)
-
         connection = client.connect()
         sync = connection.sync()
         async = connection.async()
@@ -77,8 +77,8 @@ class RedisService(
 
     private fun setupPubSub() {
         pubSub = client.connectPubSub()
-
         pubSub.addListener(object : io.lettuce.core.pubsub.RedisPubSubListener<String, String> {
+
             override fun message(channel: String, message: String) {
                 channelListeners[channel]?.forEach { it(message) }
             }
@@ -98,6 +98,7 @@ class RedisService(
     fun set(key: String, value: String) = sync.set(key, value)
     fun setEx(key: String, ttlSeconds: Long, value: String) = sync.setex(key, ttlSeconds, value)
     fun del(key: String) = sync.del(key)
+
     fun exists(key: String): Boolean = sync.exists(key) > 0
 
     fun hset(key: String, field: String, value: String) = sync.hset(key, field, value)
@@ -111,7 +112,7 @@ class RedisService(
 
     fun scanKeys(pattern: String): List<String> {
         val keys = mutableListOf<String>()
-        var cursor: ScanCursor = ScanCursor.INITIAL
+        var cursor = ScanCursor.INITIAL
 
         do {
             val scan = sync.scan(cursor, ScanArgs.Builder.matches(pattern))

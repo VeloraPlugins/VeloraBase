@@ -5,6 +5,7 @@ import online.veloraplugins.base.core.configuration.AbstractConfigService
 import online.veloraplugins.base.core.configuration.BaseConfig
 import online.veloraplugins.base.core.scheduler.SchedulerService
 import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceManager
 import java.io.File
 import java.util.logging.Logger
 
@@ -22,6 +23,13 @@ import java.util.logging.Logger
  * respective adapters (PaperBasePlugin, VelocityBasePlugin), not this class directly.
  */
 abstract class BasePlugin {
+
+    /**
+     * The global base configuration available to every plugin.
+     * Automatically created when BasePlugin initializes.
+     */
+    lateinit var serviceManager: ServiceManager
+        private set
 
     /**
      * Provides access to the global scheduler service.
@@ -78,8 +86,9 @@ abstract class BasePlugin {
      * - Registration of core services (SchedulerService)
      */
     fun initialize() {
-        scheduler = SchedulerService(this)
         initDataFolder()
+        this.serviceManager = ServiceManager()
+        this.scheduler = this.serviceManager.register(SchedulerService(this))
     }
 
     /**
@@ -107,10 +116,8 @@ abstract class BasePlugin {
      */
     open fun onLoad() {
         logger.info("Loading BasePlugin...")
-
-        for (service in Service.all()) {
-            runBlocking { service.onLoad() }
-        }
+        this.registerServices()
+        this.serviceManager.loadAll()
     }
 
     /**
@@ -121,9 +128,7 @@ abstract class BasePlugin {
      */
     open fun onEnable() {
         logger.info("Enabling BasePlugin...")
-        for (service in Service.all()) {
-            runBlocking { service.onEnable() }
-        }
+        this.serviceManager.enableAll()
     }
 
     /**
@@ -131,10 +136,18 @@ abstract class BasePlugin {
      */
     open fun onDisable() {
         logger.info("Disabling BasePlugin...")
-        for (service in Service.all()) {
-            runBlocking { service.onDisable() }
-        }
         scope.cancel()
+        this.serviceManager.disableAll()
+    }
+
+    /**
+     * Hook that platform plugins (PaperBasePlugin, VelocityBasePlugin, orOtherPlatform)
+     * must override to register ALL their services.
+     *
+     * Called during onLoad() BEFORE services are loaded.
+     */
+    open fun registerServices() {
+        // default: no services
     }
 
     /**

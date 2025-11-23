@@ -1,5 +1,7 @@
 package online.veloraplugins.base.core.service
 
+import kotlin.reflect.KClass
+
 /**
  * Annotation holding metadata (same as ModuleInfo)
  */
@@ -7,5 +9,7 @@ package online.veloraplugins.base.core.service
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ServiceInfo(
     val name: String,
-    val version: Double = 1.0
+    val version: Double = 1.0,
+    val order: LoadOrder = LoadOrder.NORMAL,
+    val dependsOn: Array<KClass<out Service>> = []
 )

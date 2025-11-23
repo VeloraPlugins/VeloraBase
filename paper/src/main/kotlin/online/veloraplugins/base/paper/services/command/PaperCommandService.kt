@@ -1,6 +1,6 @@
 package online.veloraplugins.base.paper.services.command
 
-import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.service.LoadOrder
 import online.veloraplugins.base.core.service.ServiceInfo
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import online.veloraplugins.base.paper.services.PaperService
@@ -24,7 +24,7 @@ import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.minecraft.extras.ImmutableMinecraftHelp
 import org.incendo.cloud.parser.ArgumentParser
 
-@ServiceInfo("Cloud Commands")
+@ServiceInfo("Cloud Commands", order = LoadOrder.LOW)
 class PaperCommandService(
     private val paperPlugin: PaperBasePlugin
 ) : PaperService(paperPlugin) {

@@ -43,15 +43,13 @@ abstract class PaperService(
     override suspend fun onDisable() {
         listeners.forEach { HandlerList.unregisterAll(it) }
         listeners.clear()
-        debug("Unregistered listeners for $name")
         super.onDisable()
     }
 
     /**
      * Registers this service instance as a listener.
      */
-    protected fun registerSelf() {
-        debug("Registering $name as Bukkit Listener...")
+    private fun registerSelf() {
         registerListener(this)
     }
 }

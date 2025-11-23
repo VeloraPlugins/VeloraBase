@@ -2,8 +2,11 @@ package online.veloraplugins.base.core.redis.event
 
 import online.veloraplugins.base.common.gson.GsonUtils
 import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.database.core.DatabaseService
 import online.veloraplugins.base.core.redis.RedisService
+import online.veloraplugins.base.core.service.LoadOrder
 import online.veloraplugins.base.core.service.Service
+import online.veloraplugins.base.core.service.ServiceInfo
 import kotlin.reflect.KClass
 
 /**
@@ -11,10 +14,14 @@ import kotlin.reflect.KClass
  *
  * Cross-server event communication using Redis Pub/Sub.
  */
+@ServiceInfo("Events", order = LoadOrder.LOW, dependsOn = [RedisService::class])
 class RedisEventService(
     private val app: BasePlugin,
-    private val redis: RedisService   // <-- inject direct
 ) : Service(app) {
+
+    /** Lazy getter — haalt altijd de bestaande DatabaseService */
+    private val redisService: RedisService
+        get() = plugin.serviceManager.require(RedisService::class)
 
     /** Shared PubSub channel defined in base-settings.yml */
     private val channel = app.pluginConfig.redis.eventChannel
@@ -31,7 +38,7 @@ class RedisEventService(
         }
 
         // Subscribe directly during initialization
-        redis.subscribe(channel) { message ->
+        redisService.subscribe(channel) { message ->
             handleIncoming(message)
         }
 
@@ -71,7 +78,7 @@ class RedisEventService(
         }
 
         val json = GsonUtils.gson.toJson(EventHolder(event))
-        redis.publish(channel, json)
+        redisService.publish(channel, json)
     }
 
     private fun handleIncoming(json: String) {

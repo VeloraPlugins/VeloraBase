@@ -2,6 +2,7 @@ package online.veloraplugins.paper.example
 
 import online.veloraplugins.base.common.enums.McLanguage
 import online.veloraplugins.base.core.database.core.DatabaseService
+import online.veloraplugins.base.core.database.core.DaoService
 import online.veloraplugins.base.core.database.dao.language.LanguageDao
 import online.veloraplugins.base.core.database.dao.user.BasicUserDao
 import online.veloraplugins.base.core.language.LanguageService
@@ -10,41 +11,52 @@ import online.veloraplugins.base.core.redis.event.RedisEventService
 import online.veloraplugins.base.paper.plugin.PaperBasePlugin
 import online.veloraplugins.base.paper.services.MaterialsCacheService
 import online.veloraplugins.base.paper.services.PlaceholderAPIService
+import online.veloraplugins.base.paper.services.command.PaperCommandService
 import online.veloraplugins.paper.example.language.ExampleMessage
 import online.veloraplugins.paper.example.service.ExampleService
 
 class MyPlugin : PaperBasePlugin() {
 
-    private val base = this.base()
-
     override fun onLoad() {
         super.onLoad()
 
-        val databaseService = DatabaseService(base)
+        val base = base()
 
-        databaseService.schemas.register(BasicUserDao::class)
-        databaseService.schemas.register(LanguageDao::class)
+        // Core
+        base.serviceManager.register(DatabaseService(base))
+        base.serviceManager.register(DaoService(base))
 
-        val redisService = RedisService(base)
+        // 2) direct DAOs registeren!
+        val schema = base.serviceManager.require(DaoService::class)
+        schema.register(BasicUserDao::class)
 
-        RedisEventService(base, redisService)
+        // Redis + events
+        base.serviceManager.register(RedisService(base))
+        base.serviceManager.register(RedisEventService(base))
 
-        MaterialsCacheService(this)
+        // Paper services
+        base.serviceManager.register(MaterialsCacheService(this))
+        base.serviceManager.register(PaperCommandService(this))
+        val papi = base.serviceManager.register(PlaceholderAPIService(this, "example"))
 
-        val placeholderAPIService = PlaceholderAPIService(this, "baseplugin")
-        placeholderAPIService.register("test") {
-                player -> "I am working ${player.name}"
-        }
+        // Languages
+        val lang = base.serviceManager.register(LanguageService(base))
 
-        val languageService = LanguageService(base)
-        languageService.registerEnum(McLanguage.EN_US, ExampleMessage::class.java)
-        languageService.registerEnum(McLanguage.NL_NL, ExampleMessage::class.java)
-        languageService.reloadAll()
+        // Custom
+        base.serviceManager.register(ExampleService(base))
 
-        ExampleService(base)
+        // You can already configure minor things
+        papi.register("hello") { p -> "Hello ${p.name}" }
+        lang.registerEnum(McLanguage.EN_US, ExampleMessage::class.java)
+        lang.registerEnum(McLanguage.NL_NL, ExampleMessage::class.java)
     }
+
 
     override fun onEnable() {
         super.onEnable()
+
+        val base = base()
+        // Reload languages after schemas exist
+        base.serviceManager.require(LanguageService::class).reloadAll()
     }
 }
