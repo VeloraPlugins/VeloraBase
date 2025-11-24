@@ -141,6 +141,9 @@ abstract class BasePlugin {
         this.serviceManager.disableAll()
     }
 
+    /**
+     * A hook to register the services on the right order.
+     */
     open fun registerServices() {}
 
     /**
