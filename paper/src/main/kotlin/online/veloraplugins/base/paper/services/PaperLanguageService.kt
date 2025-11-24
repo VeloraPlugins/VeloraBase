@@ -4,14 +4,17 @@ import com.cryptomorin.xseries.XSound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import online.veloraplugins.base.core.BasePlugin
+import online.veloraplugins.base.core.database.core.DaoService
 import online.veloraplugins.base.core.database.dao.language.LanguageEntry
 import online.veloraplugins.base.core.language.BaseMessage
 import online.veloraplugins.base.core.language.LanguageService
 import online.veloraplugins.base.core.language.MessageType
+import online.veloraplugins.base.core.service.ServiceInfo
 import online.veloraplugins.mccommon.ComponentUtil
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
+@ServiceInfo("PaperLanguages", dependsOn = [DaoService::class])
 class PaperLanguageService(
     override val plugin: BasePlugin) : LanguageService(plugin) {
 
