@@ -22,14 +22,6 @@ class SchedulerService(
     private val scope: CoroutineScope
         get() = plugin.scope
 
-    override suspend fun onEnable() {
-        log("SchedulerService enabled")
-    }
-
-    override suspend fun onDisable() {
-        log("SchedulerService disabled")
-    }
-
     /** Runs a task immediately. */
     fun run(task: suspend () -> Unit): Job =
         scope.launch { task() }

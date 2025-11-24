@@ -13,10 +13,22 @@ abstract class PaperBasePlugin : JavaPlugin() {
 
     lateinit var paperCommandService: PaperCommandService
 
+
+    /**
+     * Override this in your plugin to register all core services.
+     */
+    open fun registerServices() {
+        // default empty
+    }
+
     private val base = object : BasePlugin() {
 
         override val platformScope: CoroutineScope by lazy {
             this@PaperBasePlugin.scope
+        }
+
+        override fun registerServices() {
+            this@PaperBasePlugin.registerServices()
         }
 
         override fun info(message: String) {

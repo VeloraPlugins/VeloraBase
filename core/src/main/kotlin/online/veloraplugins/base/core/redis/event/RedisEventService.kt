@@ -45,14 +45,6 @@ class RedisEventService(
         log("Subscribed to redis event channel '$channel'")
     }
 
-    override suspend fun onEnable() {
-        log("RedisEventService enabled")
-    }
-
-    override suspend fun onDisable() {
-        log("RedisEventService disabled")
-    }
-
     fun <T : RedisEvent> subscribe(
         clazz: KClass<T>,
         priority: RedisEventPriority = RedisEventPriority.NORMAL,

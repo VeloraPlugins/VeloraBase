@@ -55,8 +55,7 @@ open class LanguageService(
 
     override suspend fun onLoad() {
         super.onLoad()
-        dao = daoService.register(LanguageDao::class)
-        log("LanguageDao registered")
+        dao = daoService.get(LanguageDao::class)
     }
 
 

@@ -1,9 +1,11 @@
 package online.veloraplugins.mccommon
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import kotlin.math.min
 
 
 object ComponentUtil {
@@ -63,9 +65,20 @@ object ComponentUtil {
      * Fully normalizes any input by processing both legacy (&c)
      * and MiniMessage (<red>) formatting.
      */
-    fun parse(input: String): Component {
+    fun parse(input: String, fullReset: Boolean = true): Component {
         val legacyComponent = legacySerializer.deserialize(input)
         val miniString = mini.serialize(legacyComponent)
+
+        val deserialize = mini.deserialize(miniString)
+
+        if (fullReset)
+            return Component.empty()
+                .decoration(TextDecoration.ITALIC, false)
+                .decoration(TextDecoration.BOLD, false)
+                .decoration(TextDecoration.STRIKETHROUGH, false)
+                .decoration(TextDecoration.UNDERLINED, false)
+                .decoration(TextDecoration.OBFUSCATED, false)
+                .append(deserialize)
         return mini.deserialize(miniString)
     }
 }

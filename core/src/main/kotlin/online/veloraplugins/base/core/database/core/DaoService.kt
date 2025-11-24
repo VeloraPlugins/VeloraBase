@@ -45,11 +45,9 @@ class DaoService(
 
         plugin.debug("[DaoService] Creating DAO for ${type.simpleName}")
 
-        // Reflectie constructor-call met databaseService
         val dao = ctor.call(database)
 
         daoCache[type] = dao
-        plugin.scope.launch { dao.init() }
 
         plugin.debug("[DaoService] Registered DAO ${type.simpleName}")
 
@@ -63,4 +61,16 @@ class DaoService(
             ?: error("DAO ${type.simpleName} is not registered!")
 
     inline fun <reified T : BaseDao<*>> get(): T = get(T::class)
+
+    override suspend fun onLoad() {
+        super.onLoad()
+
+        log("Loading ${daoCache.size} DAOs...")
+        for (mutableEntry in daoCache) {
+            log("Initializing dao ${mutableEntry.key}...")
+            mutableEntry.value.init()
+            log("Initializing dao ${mutableEntry.key} done!")
+        }
+        log("Loading ${daoCache.size} DAOs completed!")
+    }
 }

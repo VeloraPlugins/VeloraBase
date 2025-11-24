@@ -41,9 +41,6 @@ class DatabaseService(
         }
     }
 
-    override suspend fun onLoad() {
-        super.onLoad()
-    }
 
     override suspend fun onDisable() {
         hikari?.close()

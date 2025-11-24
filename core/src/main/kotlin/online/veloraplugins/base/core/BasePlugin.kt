@@ -89,6 +89,7 @@ abstract class BasePlugin {
         initDataFolder()
         this.serviceManager = ServiceManager()
         this.scheduler = this.serviceManager.register(SchedulerService(this))
+        this.serviceManager.enableAll()
     }
 
     /**
@@ -116,6 +117,7 @@ abstract class BasePlugin {
      */
     open fun onLoad() {
         logger.info("Loading BasePlugin...")
+        this.registerServices()
         this.serviceManager.loadAll()
     }
 
@@ -138,6 +140,8 @@ abstract class BasePlugin {
         scope.cancel()
         this.serviceManager.disableAll()
     }
+
+    open fun registerServices() {}
 
     /**
      * Debug logging helper (bound to BaseConfig.debug).

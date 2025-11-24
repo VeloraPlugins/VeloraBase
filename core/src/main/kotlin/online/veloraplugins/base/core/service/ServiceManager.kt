@@ -21,6 +21,17 @@ class ServiceManager {
         return service
     }
 
+    suspend fun <T : Service> enable(service: T): Service {
+        val key = service::class
+
+        require(services.containsKey(key)) {
+            "Service ${key.simpleName} is not registered!"
+        }
+
+        service.onEnable()
+        return service
+    }
+
     fun loadAll() = runBlocking {
         resolveOrder().forEach { it.onLoad() }
     }
