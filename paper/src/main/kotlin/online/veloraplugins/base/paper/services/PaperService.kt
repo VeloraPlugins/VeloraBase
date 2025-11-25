@@ -16,7 +16,7 @@ import org.bukkit.event.Listener
  */
 abstract class PaperService(
     private val app: PaperBasePlugin
-) : Service(app.base()), Listener {
+) : Service(app.base), Listener {
 
     private val listeners = mutableListOf<Listener>()
 

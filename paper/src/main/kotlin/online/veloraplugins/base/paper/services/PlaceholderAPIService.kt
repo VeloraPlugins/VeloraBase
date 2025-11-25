@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 class PlaceholderAPIService(
     private val app: PaperBasePlugin,
     private val namespace: String
-) : Service(app.base()) {
+) : Service(app.base) {
 
     private val placeholders = ConcurrentHashMap<String, suspend (Player) -> String>()
 

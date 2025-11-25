@@ -1,65 +1,43 @@
 package online.veloraplugins.base.paper.plugin
 
-import com.github.shynixn.mccoroutine.bukkit.scope
-import kotlinx.coroutines.CoroutineScope
 import online.veloraplugins.base.core.BasePlugin
-import online.veloraplugins.base.core.configuration.AbstractConfigService
-import online.veloraplugins.base.paper.config.PaperConfigService
 import online.veloraplugins.base.paper.services.command.PaperCommandService
-import online.veloraplugins.mccommon.ComponentUtil
 import org.bukkit.plugin.java.JavaPlugin
 
 abstract class PaperBasePlugin : JavaPlugin() {
 
+    lateinit var base: BasePlugin
+        private set
+
     lateinit var paperCommandService: PaperCommandService
 
 
-    /**
-     * Override this in your plugin to register all core services.
-     */
-    open fun registerServices() {
-        // default empty
-    }
+    /** De implementatie MOET een BasePlugin instance aanleveren. */
+    abstract fun createBasePlugin(): BasePlugin
 
-    private val base = object : BasePlugin() {
-
-        override val platformScope: CoroutineScope by lazy {
-            this@PaperBasePlugin.scope
-        }
-
-        override fun registerServices() {
-            this@PaperBasePlugin.registerServices()
-        }
-
-        override fun info(message: String) {
-            componentLogger.info(ComponentUtil.parse(message))
-        }
-
-        override fun createConfigService(): AbstractConfigService =
-            PaperConfigService(this@PaperBasePlugin)
-
-        override val logger get() = this@PaperBasePlugin.logger
-        override val dataFolder get() = this@PaperBasePlugin.dataFolder
-        override val pluginVersion get() = this@PaperBasePlugin.description.version
-    }
 
     override fun onLoad() {
         super.onLoad()
-        this.base.initialize()
-        this.base.onLoad()
+
+        // BasePlugin ophalen
+        this.base = createBasePlugin()
+
+        // Lifecycle
+        base.initialize()
+        base.onLoad()
+
+        // Paper commands pas na initialize
         paperCommandService = PaperCommandService(this)
     }
 
 
     override fun onEnable() {
         super.onEnable()
-        this.base.onEnable()
+        base.onEnable()
     }
 
     override fun onDisable() {
-        this.base.onDisable()
+        base.onDisable()
         super.onDisable()
     }
-
-    fun base(): BasePlugin = base
 }

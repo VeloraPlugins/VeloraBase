@@ -13,7 +13,7 @@ import online.veloraplugins.base.paper.services.PlaceholderAPIService
 import online.veloraplugins.base.paper.services.command.PaperCommandService
 import online.veloraplugins.paper.example.service.ExampleService
 
-class MyPlugin : PaperBasePlugin() {
+/*class MyPlugin : PaperBasePlugin() {
 
     override fun registerServices() {
         super.registerServices()
@@ -44,4 +44,4 @@ class MyPlugin : PaperBasePlugin() {
         // Reload languages after schemas exist
         base.serviceManager.require(LanguageService::class).reloadAll()
     }
-}
+}*/
